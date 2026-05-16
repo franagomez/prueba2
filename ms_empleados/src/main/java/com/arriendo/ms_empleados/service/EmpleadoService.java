@@ -2,6 +2,7 @@ package com.arriendo.ms_empleados.service;
 
 import com.arriendo.ms_empleados.dto.EmpleadoRequestDTO;
 import com.arriendo.ms_empleados.dto.EmpleadoResponseDTO;
+import com.arriendo.ms_empleados.exception.ResourceNotFoundException;
 import com.arriendo.ms_empleados.mapper.EmpleadoMapper;
 import com.arriendo.ms_empleados.model.Empleado;
 import com.arriendo.ms_empleados.repository.EmpleadoRepository;
@@ -18,6 +19,13 @@ public class EmpleadoService {
 
     public List<Empleado> obtenerTodos() {
         return empleadoRepository.findAll();
+    }
+
+    public Empleado obtenerPorId(Long id) {
+
+        return empleadoRepository.findById(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Empleado no encontrado"));
     }
 
     public EmpleadoResponseDTO guardar(EmpleadoRequestDTO dto) {

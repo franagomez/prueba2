@@ -23,6 +23,12 @@ public class EmpleadoController {
         return ResponseEntity.ok(empleadoService.obtenerTodos());
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<Empleado> buscarPorId(@PathVariable Long id) {
+
+        return ResponseEntity.ok(empleadoService.obtenerPorId(id));
+    }
+
     @PostMapping
     public ResponseEntity<EmpleadoResponseDTO> guardar(@Valid @RequestBody EmpleadoRequestDTO dto) {
 

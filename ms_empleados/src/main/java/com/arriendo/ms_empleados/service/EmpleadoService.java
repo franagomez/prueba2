@@ -21,6 +21,11 @@ public class EmpleadoService {
         return empleadoRepository.findAll();
     }
 
+    public List<Empleado> buscarActivosPorAnio(Integer anio) {
+
+        return empleadoRepository.buscarActivosPorAnio(anio);
+    }
+
     public Empleado obtenerPorId(Long id) {
 
         return empleadoRepository.findById(id)

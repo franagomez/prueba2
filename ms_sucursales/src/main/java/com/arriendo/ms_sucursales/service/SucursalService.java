@@ -2,6 +2,7 @@ package com.arriendo.ms_sucursales.service;
 
 import com.arriendo.ms_sucursales.dto.SucursalRequestDTO;
 import com.arriendo.ms_sucursales.dto.SucursalResponseDTO;
+import com.arriendo.ms_sucursales.exception.ResourceNotFoundException;
 import com.arriendo.ms_sucursales.mapper.SucursalMapper;
 import com.arriendo.ms_sucursales.model.Region;
 import com.arriendo.ms_sucursales.model.Sucursal;
@@ -28,7 +29,7 @@ public class SucursalService {
     public SucursalResponseDTO guardar(SucursalRequestDTO dto) {
 
         Region region = regionRepository.findById(dto.getRegionId())
-                .orElseThrow(() -> new RuntimeException("Región no encontrada"));
+                .orElseThrow(() -> new ResourceNotFoundException("Región no encontrada"));
 
         Sucursal sucursal = SucursalMapper.toEntity(dto, region);
 

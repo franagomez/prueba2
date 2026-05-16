@@ -36,4 +36,20 @@ public class EmpleadoController {
 
         return ResponseEntity.ok(response);
     }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Empleado> actualizar(
+            @PathVariable Long id,
+            @Valid @RequestBody EmpleadoRequestDTO dto) {
+
+        return ResponseEntity.ok(empleadoService.actualizar(id, dto));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> eliminar(@PathVariable Long id) {
+
+        empleadoService.eliminar(id);
+
+        return ResponseEntity.noContent().build();
+    }
 }

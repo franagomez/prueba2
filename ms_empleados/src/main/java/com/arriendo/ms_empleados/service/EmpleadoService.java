@@ -36,4 +36,26 @@ public class EmpleadoService {
 
         return EmpleadoMapper.toDTO(empleadoGuardado);
     }
+
+    public Empleado actualizar(Long id, EmpleadoRequestDTO dto) {
+
+        Empleado empleado = obtenerPorId(id);
+
+        empleado.setNombre(dto.getNombre());
+        empleado.setApellido(dto.getApellido());
+        empleado.setEmail(dto.getEmail());
+        empleado.setSueldo(dto.getSueldo());
+        empleado.setActivo(dto.getActivo());
+        empleado.setCargo(dto.getCargo());
+        empleado.setFechaContratacion(dto.getFechaContratacion());
+
+        return empleadoRepository.save(empleado);
+    }
+
+    public void eliminar(Long id) {
+
+        Empleado empleado = obtenerPorId(id);
+
+        empleadoRepository.delete(empleado);
+    }
 }

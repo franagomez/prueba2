@@ -1,0 +1,33 @@
+package com.arriendo.ms_empleados.controller;
+
+import com.arriendo.ms_empleados.dto.EmpleadoRequestDTO;
+import com.arriendo.ms_empleados.dto.EmpleadoResponseDTO;
+import com.arriendo.ms_empleados.model.Empleado;
+import com.arriendo.ms_empleados.service.EmpleadoService;
+import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/empleados")
+public class EmpleadoController {
+
+    @Autowired
+    private EmpleadoService empleadoService;
+
+    @GetMapping
+    public ResponseEntity<List<Empleado>> listar() {
+        return ResponseEntity.ok(empleadoService.obtenerTodos());
+    }
+
+    @PostMapping
+    public ResponseEntity<EmpleadoResponseDTO> guardar(@Valid @RequestBody EmpleadoRequestDTO dto) {
+
+        EmpleadoResponseDTO response = empleadoService.guardar(dto);
+
+        return ResponseEntity.ok(response);
+    }
+}

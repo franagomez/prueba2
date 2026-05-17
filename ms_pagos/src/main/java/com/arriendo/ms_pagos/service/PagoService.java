@@ -7,9 +7,13 @@ import com.arriendo.ms_pagos.mapper.PagoMapper;
 import com.arriendo.ms_pagos.model.Pago;
 import com.arriendo.ms_pagos.repository.PagoRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Import;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Service
 public class PagoService {

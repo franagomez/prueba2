@@ -26,6 +26,10 @@ public class SucursalService {
         return sucursalRepository.findAll();
     }
 
+    public List<Sucursal> buscarOperativas() {
+        return sucursalRepository.buscarSucursalesOperativas();
+    }
+
     public SucursalResponseDTO guardar(SucursalRequestDTO dto) {
 
         Region region = regionRepository.findById(dto.getRegionId())

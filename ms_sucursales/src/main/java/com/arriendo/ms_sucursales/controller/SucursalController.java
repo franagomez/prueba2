@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/sucursales")
+@RequestMapping("/api/v1/sucursales")
 public class SucursalController {
 
     @Autowired
@@ -20,14 +20,20 @@ public class SucursalController {
 
     @GetMapping
     public ResponseEntity<List<Sucursal>> listar() {
+
         return ResponseEntity.ok(sucursalService.obtenerTodas());
     }
 
+    @GetMapping("/operativas")
+    public ResponseEntity<List<Sucursal>> buscarOperativas() {
+
+        return ResponseEntity.ok(sucursalService.buscarOperativas());
+    }
+
     @PostMapping
-    public ResponseEntity<SucursalResponseDTO> guardar(@Valid @RequestBody SucursalRequestDTO dto) {
+    public ResponseEntity<SucursalResponseDTO> guardar(
+            @Valid @RequestBody SucursalRequestDTO dto) {
 
-        SucursalResponseDTO response = sucursalService.guardar(dto);
-
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(sucursalService.guardar(dto));
     }
 }

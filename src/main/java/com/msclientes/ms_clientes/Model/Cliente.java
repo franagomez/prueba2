@@ -1,12 +1,14 @@
 package com.msclientes.ms_clientes.Model;
 
 import jakarta.persistence.*;
-
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.CascadeType;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Entity
 @Table(name= "cliente")
@@ -43,4 +45,7 @@ public class Cliente {
 
     @Column(nullable = false)
     private LocalDate fechaRegistro;
+
+    @OneToMany(mappedBy = "cliente", cascade = CascadeType.ALL)
+    private List<Direccion> direcciones;
 }

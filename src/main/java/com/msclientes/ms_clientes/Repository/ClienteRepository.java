@@ -29,7 +29,7 @@ public interface ClienteRepository extends JpaRepository<Cliente, Integer> {
     List<Cliente> findByPuntosClienteGreaterThan(int puntosCliente);
 
     // Encuentra clientes con puntos entre dos valores
-    List<Cliente> findByPuntosClienteBetween(int puntosCliente , int puntosCliente2);
+    List<Cliente> findByPuntosClienteBetween(int puntosCliente, int puntosCliente2);
 
     //Encuentra clientes con puntos = 0
     List<Cliente> findByPuntosClienteEquals(int puntosCliente);

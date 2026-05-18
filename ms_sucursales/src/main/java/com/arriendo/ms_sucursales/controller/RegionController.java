@@ -23,11 +23,27 @@ public class RegionController {
         return ResponseEntity.ok(regionService.obtenerTodas());
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<Region> buscarPorId(@PathVariable Integer id) {
+        return ResponseEntity.ok(regionService.obtenerPorId(id));
+    }
+
     @PostMapping
     public ResponseEntity<RegionResponseDTO> guardar(@Valid @RequestBody RegionRequestDTO dto) {
+        return ResponseEntity.ok(regionService.guardar(dto));
+    }
 
-        RegionResponseDTO response = regionService.guardar(dto);
+    @PutMapping("/{id}")
+    public ResponseEntity<Region> actualizar(
+            @PathVariable Integer id,
+            @Valid @RequestBody RegionRequestDTO dto) {
 
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(regionService.actualizar(id, dto));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> eliminar(@PathVariable Integer id) {
+        regionService.eliminar(id);
+        return ResponseEntity.noContent().build();
     }
 }

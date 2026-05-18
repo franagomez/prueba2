@@ -31,6 +31,12 @@ public class ReporteController {
         return ResponseEntity.ok(reporteService.obtenerPagos());
     }
 
+    @GetMapping("/reservas")
+    public ResponseEntity<List<Map<String, Object>>> obtenerReservas() {
+
+        return ResponseEntity.ok(reporteService.obtenerReservas());
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<Reporte> buscarPorId(@PathVariable Long id) {
 

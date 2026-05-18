@@ -1,6 +1,7 @@
 package com.arriendo.ms_reportes.service;
 
 import com.arriendo.ms_reportes.client.PagoClient;
+import com.arriendo.ms_reportes.client.ReservaClient;
 import com.arriendo.ms_reportes.dto.ReporteRequestDTO;
 import com.arriendo.ms_reportes.dto.ReporteResponseDTO;
 import com.arriendo.ms_reportes.exception.ResourceNotFoundException;
@@ -27,6 +28,9 @@ public class ReporteService {
     @Autowired
     private PagoClient pagoClient;
 
+    @Autowired
+    private ReservaClient reservaClient;
+
     public List<Reporte> obtenerTodos() {
 
         log.info("Listando todos los reportes");
@@ -39,6 +43,13 @@ public class ReporteService {
         log.info("Obteniendo pagos desde ms-pagos");
 
         return pagoClient.obtenerPagos();
+    }
+
+    public List<Map<String, Object>> obtenerReservas() {
+
+        log.info("Obteniendo reservas desde ms-reservas");
+
+        return reservaClient.obtenerReservas();
     }
 
     public Reporte obtenerPorId(Long id) {

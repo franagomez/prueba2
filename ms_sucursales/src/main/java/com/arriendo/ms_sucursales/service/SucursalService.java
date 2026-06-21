@@ -28,30 +28,23 @@ public class SucursalService {
     private RegionRepository regionRepository;
 
     public List<Sucursal> obtenerTodas() {
-
         log.info("Listando todas las sucursales");
-
         return sucursalRepository.findAll();
     }
 
     public List<Sucursal> buscarOperativas() {
-
         log.info("Buscando sucursales operativas");
-
         return sucursalRepository.buscarSucursalesOperativas();
     }
 
-    public Sucursal obtenerPorId(Long id) {
-
+    public Sucursal obtenerPorId(Integer id) {
         log.info("Buscando sucursal con id {}", id);
-
         return sucursalRepository.findById(id)
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Sucursal no encontrada"));
     }
 
     public SucursalResponseDTO guardar(SucursalRequestDTO dto) {
-
         log.info("Guardando nueva sucursal");
 
         Region region = regionRepository.findById(dto.getRegionId())
@@ -59,14 +52,12 @@ public class SucursalService {
                         new ResourceNotFoundException("Región no encontrada"));
 
         Sucursal sucursal = SucursalMapper.toEntity(dto, region);
-
         Sucursal sucursalGuardada = sucursalRepository.save(sucursal);
 
         return SucursalMapper.toDTO(sucursalGuardada);
     }
 
-    public Sucursal actualizar(Long id, SucursalRequestDTO dto) {
-
+    public Sucursal actualizar(Integer id, SucursalRequestDTO dto) {
         log.info("Actualizando sucursal con id {}", id);
 
         Sucursal sucursal = obtenerPorId(id);
@@ -77,7 +68,7 @@ public class SucursalService {
 
         sucursal.setNombre(dto.getNombre());
         sucursal.setDireccion(dto.getDireccion());
-        sucursal.setCapacidad(dto.getCapacidad());
+        sucursal.setCapacidadVehiculos(dto.getCapacidadVehiculos());
         sucursal.setOperativa(dto.getOperativa());
         sucursal.setFechaApertura(dto.getFechaApertura());
         sucursal.setRegion(region);
@@ -85,12 +76,10 @@ public class SucursalService {
         return sucursalRepository.save(sucursal);
     }
 
-    public void eliminar(Long id) {
-
+    public void eliminar(Integer id) {
         log.info("Eliminando sucursal con id {}", id);
 
         Sucursal sucursal = obtenerPorId(id);
-
         sucursalRepository.delete(sucursal);
     }
 }

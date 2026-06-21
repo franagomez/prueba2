@@ -8,10 +8,10 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface SucursalRepository extends JpaRepository<Sucursal, Long> {
+public interface SucursalRepository extends JpaRepository<Sucursal, Integer> {
 
     @Query(value = """
-            SELECT * 
+            SELECT *
             FROM sucursal
             WHERE operativa = true
             ORDER BY nombre ASC

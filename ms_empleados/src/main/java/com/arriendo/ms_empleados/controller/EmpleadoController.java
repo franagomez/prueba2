@@ -1,10 +1,15 @@
-
 package com.arriendo.ms_empleados.controller;
 
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.media.Content;
 import com.arriendo.ms_empleados.dto.EmpleadoRequestDTO;
 import com.arriendo.ms_empleados.dto.EmpleadoResponseDTO;
 import com.arriendo.ms_empleados.model.Empleado;
 import com.arriendo.ms_empleados.service.EmpleadoService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -12,53 +17,136 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-    @RestController
-    @RequestMapping("/api/v1/empleados")
-    public class EmpleadoController {
+@RestController
+@RequestMapping("/api/v1/empleados")
+@Tag(
+        name = "Empleados",
+        description = "API para la gestión de empleados del sistema de arriendo de vehículos."
+)
+public class EmpleadoController {
 
-        @Autowired
-        private EmpleadoService empleadoService;
+    @Autowired
+    private EmpleadoService empleadoService;
 
-        @GetMapping
-        public ResponseEntity<List<Empleado>> listar() {
-            return ResponseEntity.ok(empleadoService.obtenerTodos());
+    //Listar empleados
+    @Operation(
+            summary = "Listar empleados",
+            description = "Obtiene todos los empleados registrados en el sistema."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Empleados encontrados"),
+            @ApiResponse(responseCode = "204", description = "No existen empleados registrados", content = @Content),
+            @ApiResponse(responseCode = "500", description = "Error interno del servidor", content = @Content)
+    })
+    @GetMapping
+    public ResponseEntity<List<Empleado>> listar() {
+
+        List<Empleado> empleados = empleadoService.obtenerTodos();
+
+        if (empleados.isEmpty()) {
+            return ResponseEntity.noContent().build();
         }
 
-        @GetMapping("/activos")
-        public ResponseEntity<List<Empleado>> buscarActivosPorAnio(
-                @RequestParam Integer anio) {
+        return ResponseEntity.ok(empleados);
+    }
 
-            return ResponseEntity.ok(
-                    empleadoService.buscarActivosPorAnio(anio));
+    //Buscar activos por año
+    @Operation(
+            summary = "Buscar empleados activos por año",
+            description = "Obtiene los empleados activos contratados durante un año determinado."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Empleados encontrados"),
+            @ApiResponse(responseCode = "204", description = "No existen empleados activos para el año indicado", content = @Content),
+            @ApiResponse(responseCode = "500", description = "Error interno del servidor", content = @Content)
+    })
+    @GetMapping("/activos")
+    public ResponseEntity<List<Empleado>> buscarActivosPorAnio(
+            @Parameter(description = "Año de contratación", example = "2024")
+            @RequestParam Integer anio) {
+
+        List<Empleado> empleados = empleadoService.buscarActivosPorAnio(anio);
+
+        if (empleados.isEmpty()) {
+            return ResponseEntity.noContent().build();
         }
 
-        @GetMapping("/{id}")
-        public ResponseEntity<Empleado> buscarPorId(@PathVariable Long id) {
+        return ResponseEntity.ok(empleados);
+    }
 
-            return ResponseEntity.ok(empleadoService.obtenerPorId(id));
-        }
+    //Buscar empleados por ID
+    @Operation(
+            summary = "Buscar empleado por ID",
+            description = "Obtiene un empleado según su identificador."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Empleado encontrado"),
+            @ApiResponse(responseCode = "404", description = "Empleado no encontrado", content = @Content),
+            @ApiResponse(responseCode = "500", description = "Error interno del servidor", content = @Content)
+    })
+    @GetMapping("/{id}")
+    public ResponseEntity<Empleado> buscarPorId(
+            @Parameter(description = "ID del empleado a buscar", example = "1")
+            @PathVariable Long id) {
 
-        @PostMapping
-        public ResponseEntity<EmpleadoResponseDTO> guardar(@Valid @RequestBody EmpleadoRequestDTO dto) {
+        return ResponseEntity.ok(empleadoService.obtenerPorId(id));
+    }
 
-            EmpleadoResponseDTO response = empleadoService.guardar(dto);
+    //Registrar empleado
+    @Operation(
+            summary = "Registrar empleado",
+            description = "Registra un nuevo empleado en el sistema."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Empleado registrado correctamente"),
+            @ApiResponse(responseCode = "400", description = "Datos inválidos", content = @Content),
+            @ApiResponse(responseCode = "500", description = "Error interno del servidor", content = @Content)
+    })
+    @PostMapping
+    public ResponseEntity<EmpleadoResponseDTO> guardar(@Valid @RequestBody EmpleadoRequestDTO dto) {
 
-            return ResponseEntity.ok(response);
-        }
+        EmpleadoResponseDTO response = empleadoService.guardar(dto);
 
-        @PutMapping("/{id}")
-        public ResponseEntity<Empleado> actualizar(
-                @PathVariable Long id,
-                @Valid @RequestBody EmpleadoRequestDTO dto) {
+        return ResponseEntity.ok(response);
+    }
 
-            return ResponseEntity.ok(empleadoService.actualizar(id, dto));
-        }
+    //Actualizar empleado
+    @Operation(
+            summary = "Actualizar empleado",
+            description = "Actualiza la información de un empleado existente."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Empleado actualizado correctamente"),
+            @ApiResponse(responseCode = "404", description = "Empleado no encontrado", content = @Content),
+            @ApiResponse(responseCode = "400", description = "Datos inválidos", content = @Content),
+            @ApiResponse(responseCode = "500", description = "Error interno del servidor", content = @Content)
+    })
+    @PutMapping("/{id}")
+    public ResponseEntity<Empleado> actualizar(
+            @Parameter(description = "ID del empleado a actualizar", example = "1")
+            @PathVariable Long id,
+            @Valid @RequestBody EmpleadoRequestDTO dto) {
 
-        @DeleteMapping("/{id}")
-        public ResponseEntity<Void> eliminar(@PathVariable Long id) {
+        return ResponseEntity.ok(empleadoService.actualizar(id, dto));
+    }
+
+    //Eliminar empleado por ID
+    @Operation(
+            summary = "Eliminar empleado",
+            description = "Elimina un empleado del sistema según su ID."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Empleado eliminado correctamente"),
+            @ApiResponse(responseCode = "404", description = "Empleado no encontrado", content = @Content),
+            @ApiResponse(responseCode = "500", description = "Error interno del servidor", content = @Content)
+    })
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> eliminar(
+            @Parameter(description = "Eliminar empleado por ID", example = "1")
+            @PathVariable Long id) {
 
             empleadoService.eliminar(id);
 
             return ResponseEntity.noContent().build();
-        }
     }
+}

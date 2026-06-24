@@ -1,0 +1,51 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+
+  cloud:
+    gateway:
+      server:
+        webmvc:
+          routes:
+            - id: ms-clientes
+              uri: http://localhost:8081
+              predicates:
+                - Path=/api/v1/clientes/**
+
+            - id: ms-vehiculos
+              uri: http://localhost:8082
+              predicates:
+                - Path=/api/v1/vehiculos/**
+
+            - id: ms-reservas
+              uri: http://localhost:8083
+              predicates:
+                - Path=/api/v1/reservas/**
+
+            - id: ms-pagos
+              uri: http://localhost:8084
+              predicates:
+                - Path=/api/v1/pagos/**
+
+            - id: ms-sucursales
+              uri: http://localhost:8085
+              predicates:
+                - Path=/api/v1/sucursales/**
+
+            - id: ms-empleados
+              uri: http://localhost:8086
+              predicates:
+                - Path=/api/v1/empleados/**
+
+            - id: ms-reportes
+              uri: http://localhost:8087
+              predicates:
+                - Path=/api/v1/reportes/**
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka

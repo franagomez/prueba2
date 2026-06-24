@@ -30,7 +30,7 @@ public class CategoriaMapper {
         categoria.setDescripcion(dto.getDescripcion());
         categoria.setCantidadVehiculos(dto.getCantidadVehiculos());
         categoria.setActiva(dto.isActiva());
-        categoria.setFechaCreacion(dto.getFechaRegistro());
+        categoria.setFechaCreacion(dto.getFechaCreacion());
 
         return categoria;
 

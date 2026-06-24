@@ -10,6 +10,8 @@ import com.msvehiculos.ms_vehiculos.Model.Vehiculo;
 import com.msvehiculos.ms_vehiculos.Repository.CategoriaRepository;
 import com.msvehiculos.ms_vehiculos.Repository.VehiculoRepository;
 import jakarta.transaction.Transactional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -19,6 +21,8 @@ import java.util.List;
 @Service
 @Transactional
 public class VehiculoService {
+
+    private static final Logger log = LoggerFactory.getLogger(VehiculoService.class);
 
     @Autowired
     private VehiculoRepository vehiculoRepository;
@@ -30,8 +34,9 @@ public class VehiculoService {
     private CategoriaRepository categoriaRepository;
 
     // Listar Vehiculos
-
     public List<VehiculoDTO> findAll() {
+
+        log.info("Listando vehículos");
 
         List<Vehiculo> vehiculos = vehiculoRepository.findAll();
         List<VehiculoDTO> listaDTO = new ArrayList<>();
@@ -46,6 +51,8 @@ public class VehiculoService {
     // Buscar vehiculo por Id
     public VehiculoDTO findById(Integer id) {
 
+        log.info("Buscando vehículo con id {}", id);
+
         Vehiculo vehiculo = vehiculoRepository.findById(id).orElse(null);
 
         if (vehiculo == null){
@@ -57,6 +64,8 @@ public class VehiculoService {
 
     // Crear vehiculo
     public VehiculoDTO save(VehiculoRequestDTO dto) {
+
+        log.info("Creando vehículo con patente {}", dto.getPatente());
 
         Categoria categoria = categoriaRepository.findById(dto.getCategoriaId()).orElse(null);
 
@@ -74,6 +83,8 @@ public class VehiculoService {
 
     //Actualizar vehiculo
     public VehiculoDTO update(Integer id, VehiculoRequestDTO dto){
+
+        log.info("Actualizando vehículo con id {}", id);
 
         Vehiculo vehiculo = vehiculoRepository.findById(id).orElse(null);
 
@@ -104,6 +115,8 @@ public class VehiculoService {
     // Eliminar vehiculo
     public boolean delete(Integer id){
 
+        log.info("Eliminando vehículo con id {}", id);
+
         if(vehiculoRepository.existsById(id)){
             vehiculoRepository.deleteById(id);
             return true;
@@ -115,6 +128,8 @@ public class VehiculoService {
     // Query Method para vehiculos disponibles con precio
     // menor al indicado
     public List<VehiculoDTO> buscarDisponiblesPorPrecioMenor(Double precio){
+
+        log.info("Buscando vehículos disponibles con precio menor a {}", precio);
 
         List<Vehiculo> vehiculos = vehiculoRepository.findByDisponibleTrueAndPrecioArriendoDiarioLessThan(precio);
 

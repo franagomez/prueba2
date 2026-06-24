@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
 
+
 @Component
 public class DataLoader implements CommandLineRunner{
 
@@ -20,34 +21,64 @@ public class DataLoader implements CommandLineRunner{
     private VehiculoRepository vehiculoRepository;
 
     @Override
-    public void run(String... args) throws Exception {
+    public void run(String... args) {
 
-        if (categoriaRepository.count()==0){
+        if (categoriaRepository.count() == 0 && vehiculoRepository.count() == 0) {
 
-            Categoria categoria = new Categoria();
+            Categoria categoria1 = new Categoria(null,
+                    "SUV",
+                    "Vehiculos deportivos utilitarios",
+                    5,
+                    true, LocalDate.now(),
+                    null);
 
-            categoria.setNombre("SUV");
-            categoria.setDescripcion("Vehiculos deportivos utilitarios");
-            categoria.setCantidadVehiculos(5);
-            categoria.setActiva(true);
-            categoria.setFechaCreacion(LocalDate.now());
+            Categoria categoria2 = new Categoria(null,
+                    "Sedan",
+                    "Vehiculos familiares",
+                    10,
+                    true, LocalDate.now(),
+                    null);
 
-            categoriaRepository.save(categoria);
+            Categoria categoria3 = new Categoria(null,
+                    "Pickup",
+                    "Vehiculos de carga liviana",
+                    4,
+                    true, LocalDate.now(),
+                    null);
 
-            Vehiculo vehiculo = new Vehiculo();
+            categoriaRepository.save(categoria1);
+            categoriaRepository.save(categoria2);
+            categoriaRepository.save(categoria3);
 
-            vehiculo.setPatente("AA1122");
-            vehiculo.setMarca("Toyota");
-            vehiculo.setModelo("Rav4");
-            vehiculo.setAnio(2023);
-            vehiculo.setPrecioArriendoDiario(45000.0);
-            vehiculo.setDisponible(true);
-            vehiculo.setFechaRegistro(LocalDate.now());
-            vehiculo.setCategoria(categoria);
+            Vehiculo vehiculo1 = new Vehiculo(null,
+                    "AA1122",
+                    "Toyota",
+                    "Rav4",
+                    2023,
+                    45000.0,
+                    true, LocalDate.now(), categoria1);
 
-            vehiculoRepository.save(vehiculo);
+            Vehiculo vehiculo2 = new Vehiculo(null,
+                    "BB3344",
+                    "Hyundai",
+                    "Accent",
+                    2022,
+                    30000.0,
+                    true, LocalDate.now(), categoria2);
 
-            System.out.println("Datos de prueba cargados");
+            Vehiculo vehiculo3 = new Vehiculo(null,
+                    "CC5566",
+                    "Mitsubishi",
+                    "L200",
+                    2021,
+                    55000.0,
+                    true, LocalDate.now(), categoria3);
+
+            vehiculoRepository.save(vehiculo1);
+            vehiculoRepository.save(vehiculo2);
+            vehiculoRepository.save(vehiculo3);
+
+            System.out.println("DataLoader ms-vehiculos ejecutado correctamente");
         }
     }
 }

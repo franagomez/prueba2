@@ -8,6 +8,8 @@ import com.msvehiculos.ms_vehiculos.Mapper.CategoriaMapper;
 import com.msvehiculos.ms_vehiculos.Model.Categoria;
 import com.msvehiculos.ms_vehiculos.Repository.CategoriaRepository;
 import jakarta.transaction.Transactional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -18,6 +20,8 @@ import java.util.ArrayList;
 @Transactional
 public class CategoriaService {
 
+    private static final Logger log = LoggerFactory.getLogger(CategoriaService.class);
+
     @Autowired
     private CategoriaRepository categoriaRepository;
 
@@ -26,8 +30,10 @@ public class CategoriaService {
 
     // Listar Categorias
     public List<CategoriaDTO> findAll(){
-        List<Categoria> categorias = categoriaRepository.findAll();
 
+        log.info("Listando categorías");
+
+        List<Categoria> categorias = categoriaRepository.findAll();
 
         List<CategoriaDTO> listaDTO = new ArrayList<>();
 
@@ -42,6 +48,8 @@ public class CategoriaService {
     // Buscar categoria por id
     public CategoriaDTO findById(Integer id){
 
+        log.info("Buscando categoría con id {}", id);
+
         Categoria categoria = categoriaRepository.findById(id).orElse(null);
 
         if (categoria == null){
@@ -55,6 +63,8 @@ public class CategoriaService {
 
     // Crear categoria
     public CategoriaDTO save(CategoriaRequestDTO dto){
+
+        log.info("Creando categoría {}", dto.getNombre());
 
         Categoria categoria = categoriaMapper.toEntity(dto);
         Categoria guardada = categoriaRepository.save(categoria);
@@ -75,7 +85,7 @@ public class CategoriaService {
         categoria.setDescripcion(dto.getDescripcion());
         categoria.setCantidadVehiculos(dto.getCantidadVehiculos());
         categoria.setActiva(dto.isActiva());
-        categoria.setFechaCreacion(dto.getFechaRegistro());
+        categoria.setFechaCreacion(dto.getFechaCreacion());
 
         Categoria actualizada = categoriaRepository.save(categoria);
 

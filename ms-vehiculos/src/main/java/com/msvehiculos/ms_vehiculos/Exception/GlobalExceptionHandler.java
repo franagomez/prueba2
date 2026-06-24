@@ -1,7 +1,5 @@
 package com.msvehiculos.ms_vehiculos.Exception;
 
-
-import org.apache.coyote.Response;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -26,5 +24,11 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
     }
 
+    // 500
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<String> manejarErrorGeneral(Exception ex){
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("Error interno del servidor");
+    }
 
 }

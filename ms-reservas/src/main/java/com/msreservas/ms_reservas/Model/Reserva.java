@@ -20,6 +20,9 @@ public class Reserva {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
+    @Column(nullable = false)
+    private Integer clienteId;
+
     @Column(nullable = false, length = 100)
     private String nombreCliente;
 

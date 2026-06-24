@@ -14,6 +14,7 @@ public class ReservaMapper {
         ReservaDTO dto = new ReservaDTO();
 
         dto.setId(reserva.getId());
+        dto.setClienteId(reserva.getClienteId());
         dto.setNombreCliente(reserva.getNombreCliente());
         dto.setVehiculoId(reserva.getVehiculoId());
         dto.setCantidadDias(reserva.getCantidadDias());
@@ -31,6 +32,7 @@ public class ReservaMapper {
     public Reserva toEntity(ReservaRequestDTO dto){
         Reserva reserva = new Reserva();
 
+        reserva.setClienteId(dto.getClienteId());
         reserva.setNombreCliente(dto.getNombreCliente());
         reserva.setVehiculoId(dto.getVehiculoId());
         reserva.setCantidadDias(dto.getCantidadDias());

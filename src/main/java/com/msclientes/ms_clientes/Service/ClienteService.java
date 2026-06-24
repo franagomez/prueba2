@@ -1,5 +1,6 @@
 package com.msclientes.ms_clientes.Service;
 
+import lombok.extern.slf4j.Slf4j;
 import com.msclientes.ms_clientes.DTO.ClienteDTO;
 import com.msclientes.ms_clientes.DTO.ClienteRequestDTO;
 import com.msclientes.ms_clientes.Exception.ResourceNotFoundException;
@@ -13,6 +14,7 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.ArrayList;
 
+@Slf4j
 @Service
 @Transactional
 public class ClienteService {
@@ -26,6 +28,8 @@ public class ClienteService {
     // Listar a todos los clientes
     public List<ClienteDTO> findAll(){
 
+        log.info("Listando todos los clientes");
+
         List<Cliente> clientes = clienteRepository.findAll();
 
         List<ClienteDTO> listaDTO = new ArrayList<>();
@@ -38,11 +42,15 @@ public class ClienteService {
         return listaDTO;
     }
 
+    //Buscando clientes por ID
     public ClienteDTO findById(Integer id){
+
+        log.info("Buscando cliente con id: {}", id);
 
         Cliente cliente = clienteRepository.findById(id).orElse(null);
 
         if (cliente == null){
+            log.error("Cliente no encontrado con id: {}", id);
             throw new ResourceNotFoundException("Cliente no encontrado");
 
         }
@@ -52,6 +60,8 @@ public class ClienteService {
 
     // Crear cliente
     public ClienteDTO save(ClienteRequestDTO dto){
+
+        log.info("Guardando nuevo cliente con email: {}", dto.getEmail());
 
         Cliente cliente = clienteMapper.toEntity(dto);
 

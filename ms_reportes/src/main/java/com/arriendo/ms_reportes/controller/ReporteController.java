@@ -1,152 +1,99 @@
 package com.arriendo.ms_reportes.controller;
 
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import com.arriendo.ms_reportes.dto.ReporteRequestDTO;
 import com.arriendo.ms_reportes.dto.ReporteResponseDTO;
 import com.arriendo.ms_reportes.model.Reporte;
 import com.arriendo.ms_reportes.service.ReporteService;
+import io.swagger.v3.oas.annotations.*;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.responses.*;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.hateoas.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
 
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
+
 @RestController
 @RequestMapping("/api/v1/reportes")
-@Tag(
-        name = "Reportes",
-        description = "API para la gestión de reportes y consulta de información relacionada con pagos y reservas."
-)
+@Tag(name = "Reportes", description = "API para la gestión de reportes y consulta de pagos y reservas.")
 public class ReporteController {
 
     @Autowired
     private ReporteService reporteService;
 
-    //Listar reportes
-    @Operation(summary = "Listar reportes", description = "Obtiene todos los reportes registrados en el sistema.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Reportes encontrados"),
-            @ApiResponse(responseCode = "204", description = "No existen reportes registrados", content = @Content),
-            @ApiResponse(responseCode = "500", description = "Error interno del servidor", content = @Content)
-    })
-    @GetMapping
-    public ResponseEntity<List<Reporte>> listar() {
-
-        List<Reporte> reportes = reporteService.obtenerTodos();
-
-        if (reportes.isEmpty()) {
-            return ResponseEntity.noContent().build();
-        }
-
-        return ResponseEntity.ok(reportes);
+    private EntityModel<Reporte> agregarLinks(Reporte reporte) {
+        return EntityModel.of(reporte,
+                linkTo(methodOn(ReporteController.class).buscarPorId(reporte.getId())).withSelfRel(),
+                linkTo(methodOn(ReporteController.class).listar()).withRel("todos-los-reportes"),
+                linkTo(methodOn(ReporteController.class).obtenerPagos()).withRel("pagos"),
+                linkTo(methodOn(ReporteController.class).obtenerReservas()).withRel("reservas")
+        );
     }
 
-    //Obtener pagos
-    @Operation(summary = "Obtener pagos", description = "Consulta la información de pagos desde el microservicio de pagos.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Pagos obtenidos correctamente"),
-            @ApiResponse(responseCode = "204", description = "No existen pagos registrados", content = @Content),
-            @ApiResponse(responseCode = "500", description = "Error interno del servidor", content = @Content)
-    })
+    @Operation(summary = "Listar reportes")
+    @GetMapping
+    public ResponseEntity<CollectionModel<EntityModel<Reporte>>> listar() {
+        List<Reporte> reportes = reporteService.obtenerTodos();
+
+        if (reportes.isEmpty()) return ResponseEntity.noContent().build();
+
+        List<EntityModel<Reporte>> reportesConLinks = reportes.stream()
+                .map(this::agregarLinks)
+                .toList();
+
+        return ResponseEntity.ok(CollectionModel.of(
+                reportesConLinks,
+                linkTo(methodOn(ReporteController.class).listar()).withSelfRel()
+        ));
+    }
+
+    @Operation(summary = "Obtener pagos")
     @GetMapping("/pagos")
     public ResponseEntity<List<Map<String, Object>>> obtenerPagos() {
-
         List<Map<String, Object>> pagos = reporteService.obtenerPagos();
-
-        if (pagos.isEmpty()) {
-            return ResponseEntity.noContent().build();
-        }
-
+        if (pagos.isEmpty()) return ResponseEntity.noContent().build();
         return ResponseEntity.ok(pagos);
     }
 
-
-    // Obtener reservas
-    @Operation(summary = "Obtener reservas", description = "Consulta la información de reservas desde el microservicio de reservas.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Reservas obtenidas correctamente"),
-            @ApiResponse(responseCode = "204", description = "No existen reservas registradas", content = @Content),
-            @ApiResponse(responseCode = "500", description = "Error interno del servidor", content = @Content)
-    })
+    @Operation(summary = "Obtener reservas")
     @GetMapping("/reservas")
     public ResponseEntity<List<Map<String, Object>>> obtenerReservas() {
-
         List<Map<String, Object>> reservas = reporteService.obtenerReservas();
-
-        if (reservas.isEmpty()) {
-            return ResponseEntity.noContent().build();
-        }
-
+        if (reservas.isEmpty()) return ResponseEntity.noContent().build();
         return ResponseEntity.ok(reservas);
     }
 
-    //Buscar por ID
-    @Operation(summary = "Buscar reporte por ID", description = "Obtiene un reporte específico según su identificador.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Reporte encontrado"),
-            @ApiResponse(responseCode = "404", description = "Reporte no encontrado", content = @Content),
-            @ApiResponse(responseCode = "500", description = "Error interno del servidor", content = @Content)
-    })
+    @Operation(summary = "Buscar reporte por ID")
     @GetMapping("/{id}")
-    public ResponseEntity<Reporte> buscarPorId(
-            @Parameter(description = "ID del reporte a buscar", example = "1")
-            @PathVariable Long id) {
-
-        return ResponseEntity.ok(reporteService.obtenerPorId(id));
+    public ResponseEntity<EntityModel<Reporte>> buscarPorId(@PathVariable Long id) {
+        return ResponseEntity.ok(agregarLinks(reporteService.obtenerPorId(id)));
     }
 
-    //Registrar reporte
-    @Operation(summary = "Registrar reporte", description = "Registra un nuevo reporte en el sistema.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Reporte registrado correctamente"),
-            @ApiResponse(responseCode = "400", description = "Datos inválidos", content = @Content),
-            @ApiResponse(responseCode = "500", description = "Error interno del servidor", content = @Content)
-    })
+    @Operation(summary = "Registrar reporte")
     @PostMapping
-    public ResponseEntity<ReporteResponseDTO> guardar(
-            @Valid @RequestBody ReporteRequestDTO dto) {
-
+    public ResponseEntity<ReporteResponseDTO> guardar(@Valid @RequestBody ReporteRequestDTO dto) {
         return ResponseEntity.ok(reporteService.guardar(dto));
     }
 
-    // Actualizar reporte por ID
-    @Operation(summary = "Actualizar reporte", description = "Actualiza la información de un reporte existente.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Reporte actualizado correctamente"),
-            @ApiResponse(responseCode = "400", description = "Datos inválidos", content = @Content),
-            @ApiResponse(responseCode = "404", description = "Reporte no encontrado", content = @Content),
-            @ApiResponse(responseCode = "500", description = "Error interno del servidor", content = @Content)
-    })
+    @Operation(summary = "Actualizar reporte")
     @PutMapping("/{id}")
-    public ResponseEntity<Reporte> actualizar(
-            @Parameter(description = "ID del reporte a actualizar", example = "1")
+    public ResponseEntity<EntityModel<Reporte>> actualizar(
             @PathVariable Long id,
             @Valid @RequestBody ReporteRequestDTO dto) {
 
-        return ResponseEntity.ok(reporteService.actualizar(id, dto));
+        return ResponseEntity.ok(agregarLinks(reporteService.actualizar(id, dto)));
     }
 
-    //Eliminar reporte
-    @Operation(summary = "Eliminar reporte", description = "Elimina un reporte del sistema según su ID.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "204", description = "Reporte eliminado correctamente"),
-            @ApiResponse(responseCode = "404", description = "Reporte no encontrado", content = @Content),
-            @ApiResponse(responseCode = "500", description = "Error interno del servidor", content = @Content)
-    })
+    @Operation(summary = "Eliminar reporte")
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> eliminar(
-            @Parameter(description = "ID del reporte a eliminar", example = "1")
-            @PathVariable Long id) {
-
+    public ResponseEntity<Void> eliminar(@PathVariable Long id) {
         reporteService.eliminar(id);
-
         return ResponseEntity.noContent().build();
     }
 }

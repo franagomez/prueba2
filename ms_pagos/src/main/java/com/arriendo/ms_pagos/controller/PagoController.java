@@ -12,10 +12,14 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.hateoas.CollectionModel;
+import org.springframework.hateoas.EntityModel;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
 
 @RestController
 @RequestMapping("/api/v1/pagos")
@@ -28,7 +32,14 @@ public class PagoController {
     @Autowired
     private PagoService pagoService;
 
-    //Listar pagos
+    private EntityModel<Pago> agregarLinks(Pago pago) {
+        return EntityModel.of(pago,
+                linkTo(methodOn(PagoController.class).buscarPorId(pago.getId())).withSelfRel(),
+                linkTo(methodOn(PagoController.class).listar()).withRel("todos-los-pagos"),
+                linkTo(methodOn(PagoController.class).buscarPorRango(10000.0, 100000.0)).withRel("pagos-por-rango")
+        );
+    }
+
     @Operation(
             summary = "Obtener todos los pagos",
             description = "Retorna una lista con todos los pagos registrados"
@@ -38,11 +49,20 @@ public class PagoController {
             @ApiResponse(responseCode = "500", description = "Error interno del servidor", content = @Content)
     })
     @GetMapping
-    public ResponseEntity<List<Pago>> listar() {
-        return ResponseEntity.ok(pagoService.obtenerTodos());
+    public ResponseEntity<CollectionModel<EntityModel<Pago>>> listar() {
+        List<EntityModel<Pago>> pagos = pagoService.obtenerTodos()
+                .stream()
+                .map(this::agregarLinks)
+                .toList();
+
+        CollectionModel<EntityModel<Pago>> respuesta = CollectionModel.of(
+                pagos,
+                linkTo(methodOn(PagoController.class).listar()).withSelfRel()
+        );
+
+        return ResponseEntity.ok(respuesta);
     }
 
-    //Buscar pagos
     @Operation(
             summary = "Buscar pagos por rango",
             description = "Busca pagos entre un monto mínimo y máximo"
@@ -52,17 +72,26 @@ public class PagoController {
             @ApiResponse(responseCode = "500", description = "Error interno del servidor", content = @Content)
     })
     @GetMapping("/rango")
-    public ResponseEntity<List<Pago>> buscarPorRango(
+    public ResponseEntity<CollectionModel<EntityModel<Pago>>> buscarPorRango(
             @Parameter(description = "Monto mínimo del rango", example = "10000")
             @RequestParam Double minimo,
             @Parameter(description = "Monto máximo del rango", example = "100000")
             @RequestParam Double maximo) {
 
-        return ResponseEntity.ok(
-                pagoService.buscarPorRango(minimo, maximo));
+        List<EntityModel<Pago>> pagos = pagoService.buscarPorRango(minimo, maximo)
+                .stream()
+                .map(this::agregarLinks)
+                .toList();
+
+        CollectionModel<EntityModel<Pago>> respuesta = CollectionModel.of(
+                pagos,
+                linkTo(methodOn(PagoController.class).buscarPorRango(minimo, maximo)).withSelfRel(),
+                linkTo(methodOn(PagoController.class).listar()).withRel("todos-los-pagos")
+        );
+
+        return ResponseEntity.ok(respuesta);
     }
 
-    //Buscar por ID
     @Operation(
             summary = "Buscar pago por ID",
             description = "Obtiene un pago específico según su identificador"
@@ -73,13 +102,14 @@ public class PagoController {
             @ApiResponse(responseCode = "500", description = "Error interno del servidor", content = @Content)
     })
     @GetMapping("/{id}")
-    public ResponseEntity<Pago> buscarPorId(
+    public ResponseEntity<EntityModel<Pago>> buscarPorId(
             @Parameter(description = "ID del pago", example = "1")
             @PathVariable Long id) {
-        return ResponseEntity.ok(pagoService.obtenerPorId(id));
+
+        Pago pago = pagoService.obtenerPorId(id);
+        return ResponseEntity.ok(agregarLinks(pago));
     }
 
-    //Crear pago en el sistema
     @Operation(
             summary = "Registrar pago",
             description = "Crea un nuevo pago en el sistema"
@@ -95,7 +125,6 @@ public class PagoController {
         return ResponseEntity.status(201).body(response);
     }
 
-    //Actualizar pago en el sistema
     @Operation(
             summary = "Actualizar pago",
             description = "Actualiza la información de un pago existente"
@@ -115,7 +144,6 @@ public class PagoController {
         return ResponseEntity.ok(pagoService.actualizar(id, dto));
     }
 
-    //Eliminar pago
     @Operation(
             summary = "Eliminar pago",
             description = "Elimina un pago por su identificador"

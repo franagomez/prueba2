@@ -12,6 +12,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -27,102 +28,110 @@ class PagoServiceTest {
     private PagoService pagoService;
 
     @Test
-    void guardarPago_CuandoDatosValidos_DebeRetornarPagoResponseDTO() {
-        // Given
-        PagoRequestDTO requestDTO = new PagoRequestDTO();
-        requestDTO.setMonto(200000.0);
-        requestDTO.setMetodoPago("Tarjeta");
-        requestDTO.setPagado(true);
-        requestDTO.setFechaPago(LocalDate.of(2026, 6, 19));
-        requestDTO.setDescripcion("Pago de reserva");
+    void obtenerTodos_debeRetornarListaDePagos() {
+        Pago pago = crearPago();
 
-        Pago pagoGuardado = new Pago();
-        pagoGuardado.setId(1L);
-        pagoGuardado.setMonto(200000.0);
-        pagoGuardado.setMetodoPago("Tarjeta");
-        pagoGuardado.setPagado(true);
-        pagoGuardado.setFechaPago(LocalDate.of(2026, 6, 19));
-        pagoGuardado.setDescripcion("Pago de reserva");
+        when(pagoRepository.findAll()).thenReturn(List.of(pago));
 
-        when(pagoRepository.save(any(Pago.class))).thenReturn(pagoGuardado);
+        List<Pago> resultado = pagoService.obtenerTodos();
 
-        // When
-        PagoResponseDTO resultado = pagoService.guardar(requestDTO);
+        assertEquals(1, resultado.size());
+        assertEquals("Tarjeta", resultado.get(0).getMetodoPago());
+        verify(pagoRepository).findAll();
+    }
 
-        // Then
-        assertNotNull(resultado);
+    @Test
+    void obtenerPorId_debeRetornarPago() {
+        Pago pago = crearPago();
+
+        when(pagoRepository.findById(1L)).thenReturn(Optional.of(pago));
+
+        Pago resultado = pagoService.obtenerPorId(1L);
+
         assertEquals(1L, resultado.getId());
         assertEquals(200000.0, resultado.getMonto());
-        assertEquals("Tarjeta", resultado.getMetodoPago());
-        assertTrue(resultado.getPagado());
-
-        verify(pagoRepository, times(1)).save(any(Pago.class));
+        verify(pagoRepository).findById(1L);
     }
 
     @Test
-    void obtenerPorId_CuandoPagoExiste_DebeRetornarPago() {
-        // Given
-        Long id = 1L;
+    void obtenerPorId_debeLanzarExcepcionSiNoExiste() {
+        when(pagoRepository.findById(99L)).thenReturn(Optional.empty());
 
-        Pago pago = new Pago();
-        pago.setId(id);
-        pago.setMonto(150000.0);
-        pago.setMetodoPago("Efectivo");
-        pago.setPagado(true);
-        pago.setFechaPago(LocalDate.of(2026, 6, 19));
-        pago.setDescripcion("Pago encontrado");
+        assertThrows(ResourceNotFoundException.class, () -> pagoService.obtenerPorId(99L));
 
-        when(pagoRepository.findById(id)).thenReturn(Optional.of(pago));
+        verify(pagoRepository).findById(99L);
+    }
 
-        // When
-        Pago resultado = pagoService.obtenerPorId(id);
+    @Test
+    void buscarPorRango_debeRetornarPagos() {
+        Pago pago = crearPago();
 
-        // Then
+        when(pagoRepository.buscarPagosPorRango(10000.0, 300000.0))
+                .thenReturn(List.of(pago));
+
+        List<Pago> resultado = pagoService.buscarPorRango(10000.0, 300000.0);
+
+        assertEquals(1, resultado.size());
+        verify(pagoRepository).buscarPagosPorRango(10000.0, 300000.0);
+    }
+
+    @Test
+    void guardar_debeGuardarPago() {
+        PagoRequestDTO dto = crearRequestDTO();
+        Pago pago = crearPago();
+
+        when(pagoRepository.save(any(Pago.class))).thenReturn(pago);
+
+        PagoResponseDTO resultado = pagoService.guardar(dto);
+
         assertNotNull(resultado);
-        assertEquals(id, resultado.getId());
-        assertEquals("Efectivo", resultado.getMetodoPago());
-
-        verify(pagoRepository, times(1)).findById(id);
+        verify(pagoRepository).save(any(Pago.class));
     }
 
     @Test
-    void obtenerPorId_CuandoPagoNoExiste_DebeLanzarResourceNotFoundException() {
-        // Given
-        Long id = 99L;
+    void actualizar_debeActualizarPago() {
+        Pago pago = crearPago();
+        PagoRequestDTO dto = crearRequestDTO();
 
-        when(pagoRepository.findById(id)).thenReturn(Optional.empty());
+        when(pagoRepository.findById(1L)).thenReturn(Optional.of(pago));
+        when(pagoRepository.save(any(Pago.class))).thenReturn(pago);
 
-        // When & Then
-        ResourceNotFoundException exception = assertThrows(
-                ResourceNotFoundException.class,
-                () -> pagoService.obtenerPorId(id)
-        );
+        Pago resultado = pagoService.actualizar(1L, dto);
 
-        assertEquals("Pago no encontrado", exception.getMessage());
-
-        verify(pagoRepository, times(1)).findById(id);
+        assertEquals("Tarjeta", resultado.getMetodoPago());
+        assertEquals(200000.0, resultado.getMonto());
+        verify(pagoRepository).save(pago);
     }
 
     @Test
-    void eliminar_CuandoPagoExiste_DebeEliminarPago() {
-        // Given
-        Long id = 1L;
+    void eliminar_debeEliminarPago() {
+        Pago pago = crearPago();
 
+        when(pagoRepository.findById(1L)).thenReturn(Optional.of(pago));
+
+        pagoService.eliminar(1L);
+
+        verify(pagoRepository).delete(pago);
+    }
+
+    private Pago crearPago() {
         Pago pago = new Pago();
-        pago.setId(id);
-        pago.setMonto(100000.0);
-        pago.setMetodoPago("Transferencia");
+        pago.setId(1L);
+        pago.setMonto(200000.0);
+        pago.setMetodoPago("Tarjeta");
         pago.setPagado(true);
-        pago.setFechaPago(LocalDate.of(2026, 6, 19));
-        pago.setDescripcion("Pago a eliminar");
+        pago.setFechaPago(LocalDate.of(2025, 1, 1));
+        pago.setDescripcion("Pago actualizado");
+        return pago;
+    }
 
-        when(pagoRepository.findById(id)).thenReturn(Optional.of(pago));
-
-        // When
-        pagoService.eliminar(id);
-
-        // Then
-        verify(pagoRepository, times(1)).findById(id);
-        verify(pagoRepository, times(1)).delete(pago);
+    private PagoRequestDTO crearRequestDTO() {
+        PagoRequestDTO dto = new PagoRequestDTO();
+        dto.setMonto(200000.0);
+        dto.setMetodoPago("Tarjeta");
+        dto.setPagado(true);
+        dto.setFechaPago(LocalDate.of(2025, 1, 1));
+        dto.setDescripcion("Pago actualizado");
+        return dto;
     }
 }

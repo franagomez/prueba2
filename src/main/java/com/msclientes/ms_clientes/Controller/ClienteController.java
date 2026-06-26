@@ -1,7 +1,8 @@
 package com.msclientes.ms_clientes.Controller;
 
-
-
+import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.CollectionModel;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -37,14 +38,22 @@ public class ClienteController {
     })
 
     @GetMapping
-    public ResponseEntity<List<ClienteDTO>> listar(){
+    public ResponseEntity<CollectionModel<EntityModel<ClienteDTO>>> listar(){
 
         List<ClienteDTO> clientes = clienteService.findAll();
 
         if (clientes.isEmpty()){
             return ResponseEntity.noContent().build();
         }
-        return ResponseEntity.ok(clientes);
+
+        List<EntityModel<ClienteDTO>> clientesConLinks = clientes.stream()
+                .map(cliente -> EntityModel.of(cliente,
+                        linkTo(methodOn(ClienteController.class).buscarPorId(cliente.getId())).withSelfRel(),
+                        linkTo(methodOn(ClienteController.class).listar()).withRel("clientes")))
+                .toList();
+
+        return ResponseEntity.ok(CollectionModel.of(clientesConLinks,
+                linkTo(methodOn(ClienteController.class).listar()).withSelfRel()));
     }
 
     // Buscar cliente por ID
@@ -55,10 +64,17 @@ public class ClienteController {
             @ApiResponse(responseCode = "500", description = "Error interno del sistema", content = @Content)
     })
     @GetMapping("/{id}")
-    public ResponseEntity<ClienteDTO> buscarPorId(
+    public ResponseEntity<EntityModel<ClienteDTO>> buscarPorId(
             @Parameter(description = "ID del cliente", example = "1")
             @PathVariable Integer id){
-        return ResponseEntity.ok(clienteService.findById(id));
+
+        ClienteDTO cliente = clienteService.findById(id);
+
+        EntityModel<ClienteDTO> clienteConLinks = EntityModel.of(cliente,
+                linkTo(methodOn(ClienteController.class).buscarPorId(id)).withSelfRel(),
+                linkTo(methodOn(ClienteController.class).listar()).withRel("clientes"));
+
+        return ResponseEntity.ok(clienteConLinks);
     }
 
     // Crear cliente

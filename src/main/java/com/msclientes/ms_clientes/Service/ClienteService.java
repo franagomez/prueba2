@@ -75,7 +75,8 @@ public class ClienteService {
 
     public ClienteDTO update(Integer id, ClienteRequestDTO dto){
 
-        Cliente cliente = clienteRepository.findById(id).get();
+        Cliente cliente = clienteRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Cliente no encontrado"));
 
         cliente.setRun(dto.getRun());
         cliente.setNombre(dto.getNombre());

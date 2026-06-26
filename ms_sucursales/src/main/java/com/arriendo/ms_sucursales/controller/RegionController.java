@@ -1,22 +1,26 @@
 package com.arriendo.ms_sucursales.controller;
 
+import com.arriendo.ms_sucursales.dto.RegionRequestDTO;
+import com.arriendo.ms_sucursales.dto.RegionResponseDTO;
+import com.arriendo.ms_sucursales.model.Region;
+import com.arriendo.ms_sucursales.service.RegionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.http.HttpStatus;
-import com.arriendo.ms_sucursales.dto.RegionRequestDTO;
-import com.arriendo.ms_sucursales.dto.RegionResponseDTO;
-import com.arriendo.ms_sucursales.model.Region;
-import com.arriendo.ms_sucursales.service.RegionService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.hateoas.CollectionModel;
+import org.springframework.hateoas.EntityModel;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
 
 @RestController
 @RequestMapping("/api/v1/regiones")
@@ -26,7 +30,14 @@ public class RegionController {
     @Autowired
     private RegionService regionService;
 
-    //Listar regiones
+    private EntityModel<Region> agregarLinks(Region region) {
+        return EntityModel.of(
+                region,
+                linkTo(methodOn(RegionController.class).buscarPorId(region.getId())).withSelfRel(),
+                linkTo(methodOn(RegionController.class).listar()).withRel("todas-las-regiones")
+        );
+    }
+
     @Operation(summary = "Listar regiones", description = "Obtiene todas las regiones registradas en el sistema.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Regiones encontradas"),
@@ -34,17 +45,26 @@ public class RegionController {
             @ApiResponse(responseCode = "500", description = "Error interno del servidor", content = @Content)
     })
     @GetMapping
-    public ResponseEntity<List<Region>> listar() {
+    public ResponseEntity<CollectionModel<EntityModel<Region>>> listar() {
         List<Region> regiones = regionService.obtenerTodas();
 
-        if(regiones.isEmpty()){
+        if (regiones.isEmpty()) {
             return ResponseEntity.noContent().build();
         }
 
-        return ResponseEntity.ok(regiones);
+        List<EntityModel<Region>> regionesConLinks = regiones.stream()
+                .map(this::agregarLinks)
+                .toList();
+
+        CollectionModel<EntityModel<Region>> respuesta =
+                CollectionModel.of(
+                        regionesConLinks,
+                        linkTo(methodOn(RegionController.class).listar()).withSelfRel()
+                );
+
+        return ResponseEntity.ok(respuesta);
     }
 
-    //Buscar región por ID
     @Operation(summary = "Buscar región por ID", description = "Obtiene una región específica según su identificador.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Región encontrada"),
@@ -52,13 +72,14 @@ public class RegionController {
             @ApiResponse(responseCode = "500", description = "Error interno del servidor", content = @Content)
     })
     @GetMapping("/{id}")
-    public ResponseEntity<Region> buscarPorId(
+    public ResponseEntity<EntityModel<Region>> buscarPorId(
             @Parameter(description = "ID de la región", example = "1")
             @PathVariable Integer id) {
-        return ResponseEntity.ok(regionService.obtenerPorId(id));
+
+        Region region = regionService.obtenerPorId(id);
+        return ResponseEntity.ok(agregarLinks(region));
     }
 
-    //Crear/registrar nueva region en el sistema
     @Operation(summary = "Crear región", description = "Registra una nueva región en el sistema.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Región creada correctamente"),
@@ -71,7 +92,6 @@ public class RegionController {
                 .body(regionService.guardar(dto));
     }
 
-    //Actualizar región
     @Operation(summary = "Actualizar región", description = "Actualiza los datos de una región existente.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Región actualizada correctamente"),
@@ -80,15 +100,15 @@ public class RegionController {
             @ApiResponse(responseCode = "500", description = "Error interno del servidor", content = @Content)
     })
     @PutMapping("/{id}")
-    public ResponseEntity<Region> actualizar(
+    public ResponseEntity<EntityModel<Region>> actualizar(
             @Parameter(description = "ID de la región a actualizar", example = "1")
             @PathVariable Integer id,
             @Valid @RequestBody RegionRequestDTO dto) {
 
-        return ResponseEntity.ok(regionService.actualizar(id, dto));
+        Region region = regionService.actualizar(id, dto);
+        return ResponseEntity.ok(agregarLinks(region));
     }
 
-    //Eliminar región registrada
     @Operation(summary = "Eliminar región", description = "Elimina una región existente según su identificador.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "Región eliminada correctamente", content = @Content),
@@ -99,6 +119,7 @@ public class RegionController {
     public ResponseEntity<Void> eliminar(
             @Parameter(description = "ID de la región a eliminar", example = "1")
             @PathVariable Integer id) {
+
         regionService.eliminar(id);
         return ResponseEntity.noContent().build();
     }

@@ -1,45 +1,50 @@
 package com.arriendo.ms_empleados.controller;
 
+import com.arriendo.ms_empleados.dto.EmpleadoRequestDTO;
+import com.arriendo.ms_empleados.dto.EmpleadoResponseDTO;
+import com.arriendo.ms_empleados.model.Empleado;
+import com.arriendo.ms_empleados.service.EmpleadoService;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.media.Content;
-import com.arriendo.ms_empleados.dto.EmpleadoRequestDTO;
-import com.arriendo.ms_empleados.dto.EmpleadoResponseDTO;
-import com.arriendo.ms_empleados.model.Empleado;
-import com.arriendo.ms_empleados.service.EmpleadoService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.hateoas.CollectionModel;
+import org.springframework.hateoas.EntityModel;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
+
 @RestController
 @RequestMapping("/api/v1/empleados")
-@Tag(
-        name = "Empleados",
-        description = "API para la gestión de empleados del sistema de arriendo de vehículos."
-)
+@Tag(name = "Empleados", description = "API para la gestión de empleados del sistema de arriendo de vehículos.")
 public class EmpleadoController {
 
     @Autowired
     private EmpleadoService empleadoService;
 
-    //Listar empleados
-    @Operation(
-            summary = "Listar empleados",
-            description = "Obtiene todos los empleados registrados en el sistema."
-    )
+    private EntityModel<Empleado> agregarLinks(Empleado empleado) {
+        return EntityModel.of(empleado,
+                linkTo(methodOn(EmpleadoController.class).buscarPorId(empleado.getId())).withSelfRel(),
+                linkTo(methodOn(EmpleadoController.class).listar()).withRel("todos-los-empleados"),
+                linkTo(methodOn(EmpleadoController.class).buscarActivosPorAnio(2024)).withRel("empleados-activos-por-anio")
+        );
+    }
+
+    @Operation(summary = "Listar empleados", description = "Obtiene todos los empleados registrados en el sistema.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Empleados encontrados"),
             @ApiResponse(responseCode = "204", description = "No existen empleados registrados", content = @Content),
             @ApiResponse(responseCode = "500", description = "Error interno del servidor", content = @Content)
     })
     @GetMapping
-    public ResponseEntity<List<Empleado>> listar() {
+    public ResponseEntity<CollectionModel<EntityModel<Empleado>>> listar() {
 
         List<Empleado> empleados = empleadoService.obtenerTodos();
 
@@ -47,21 +52,27 @@ public class EmpleadoController {
             return ResponseEntity.noContent().build();
         }
 
-        return ResponseEntity.ok(empleados);
+        List<EntityModel<Empleado>> empleadosConLinks = empleados.stream()
+                .map(this::agregarLinks)
+                .toList();
+
+        CollectionModel<EntityModel<Empleado>> respuesta = CollectionModel.of(
+                empleadosConLinks,
+                linkTo(methodOn(EmpleadoController.class).listar()).withSelfRel()
+        );
+
+        return ResponseEntity.ok(respuesta);
     }
 
-    //Buscar activos por año
-    @Operation(
-            summary = "Buscar empleados activos por año",
-            description = "Obtiene los empleados activos contratados durante un año determinado."
-    )
+    @Operation(summary = "Buscar empleados activos por año",
+            description = "Obtiene los empleados activos contratados durante un año determinado.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Empleados encontrados"),
             @ApiResponse(responseCode = "204", description = "No existen empleados activos para el año indicado", content = @Content),
             @ApiResponse(responseCode = "500", description = "Error interno del servidor", content = @Content)
     })
     @GetMapping("/activos")
-    public ResponseEntity<List<Empleado>> buscarActivosPorAnio(
+    public ResponseEntity<CollectionModel<EntityModel<Empleado>>> buscarActivosPorAnio(
             @Parameter(description = "Año de contratación", example = "2024")
             @RequestParam Integer anio) {
 
@@ -71,32 +82,35 @@ public class EmpleadoController {
             return ResponseEntity.noContent().build();
         }
 
-        return ResponseEntity.ok(empleados);
+        List<EntityModel<Empleado>> empleadosConLinks = empleados.stream()
+                .map(this::agregarLinks)
+                .toList();
+
+        CollectionModel<EntityModel<Empleado>> respuesta = CollectionModel.of(
+                empleadosConLinks,
+                linkTo(methodOn(EmpleadoController.class).buscarActivosPorAnio(anio)).withSelfRel(),
+                linkTo(methodOn(EmpleadoController.class).listar()).withRel("todos-los-empleados")
+        );
+
+        return ResponseEntity.ok(respuesta);
     }
 
-    //Buscar empleados por ID
-    @Operation(
-            summary = "Buscar empleado por ID",
-            description = "Obtiene un empleado según su identificador."
-    )
+    @Operation(summary = "Buscar empleado por ID", description = "Obtiene un empleado según su identificador.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Empleado encontrado"),
             @ApiResponse(responseCode = "404", description = "Empleado no encontrado", content = @Content),
             @ApiResponse(responseCode = "500", description = "Error interno del servidor", content = @Content)
     })
     @GetMapping("/{id}")
-    public ResponseEntity<Empleado> buscarPorId(
+    public ResponseEntity<EntityModel<Empleado>> buscarPorId(
             @Parameter(description = "ID del empleado a buscar", example = "1")
             @PathVariable Long id) {
 
-        return ResponseEntity.ok(empleadoService.obtenerPorId(id));
+        Empleado empleado = empleadoService.obtenerPorId(id);
+        return ResponseEntity.ok(agregarLinks(empleado));
     }
 
-    //Registrar empleado
-    @Operation(
-            summary = "Registrar empleado",
-            description = "Registra un nuevo empleado en el sistema."
-    )
+    @Operation(summary = "Registrar empleado", description = "Registra un nuevo empleado en el sistema.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Empleado registrado correctamente"),
             @ApiResponse(responseCode = "400", description = "Datos inválidos", content = @Content),
@@ -104,17 +118,11 @@ public class EmpleadoController {
     })
     @PostMapping
     public ResponseEntity<EmpleadoResponseDTO> guardar(@Valid @RequestBody EmpleadoRequestDTO dto) {
-
         EmpleadoResponseDTO response = empleadoService.guardar(dto);
-
         return ResponseEntity.ok(response);
     }
 
-    //Actualizar empleado
-    @Operation(
-            summary = "Actualizar empleado",
-            description = "Actualiza la información de un empleado existente."
-    )
+    @Operation(summary = "Actualizar empleado", description = "Actualiza la información de un empleado existente.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Empleado actualizado correctamente"),
             @ApiResponse(responseCode = "404", description = "Empleado no encontrado", content = @Content),
@@ -122,19 +130,16 @@ public class EmpleadoController {
             @ApiResponse(responseCode = "500", description = "Error interno del servidor", content = @Content)
     })
     @PutMapping("/{id}")
-    public ResponseEntity<Empleado> actualizar(
+    public ResponseEntity<EntityModel<Empleado>> actualizar(
             @Parameter(description = "ID del empleado a actualizar", example = "1")
             @PathVariable Long id,
             @Valid @RequestBody EmpleadoRequestDTO dto) {
 
-        return ResponseEntity.ok(empleadoService.actualizar(id, dto));
+        Empleado empleado = empleadoService.actualizar(id, dto);
+        return ResponseEntity.ok(agregarLinks(empleado));
     }
 
-    //Eliminar empleado por ID
-    @Operation(
-            summary = "Eliminar empleado",
-            description = "Elimina un empleado del sistema según su ID."
-    )
+    @Operation(summary = "Eliminar empleado", description = "Elimina un empleado del sistema según su ID.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "Empleado eliminado correctamente"),
             @ApiResponse(responseCode = "404", description = "Empleado no encontrado", content = @Content),
@@ -145,8 +150,7 @@ public class EmpleadoController {
             @Parameter(description = "Eliminar empleado por ID", example = "1")
             @PathVariable Long id) {
 
-            empleadoService.eliminar(id);
-
-            return ResponseEntity.noContent().build();
+        empleadoService.eliminar(id);
+        return ResponseEntity.noContent().build();
     }
 }

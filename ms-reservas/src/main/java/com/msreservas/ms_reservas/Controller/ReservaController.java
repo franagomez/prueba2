@@ -1,22 +1,26 @@
 package com.msreservas.ms_reservas.Controller;
 
+import com.msreservas.ms_reservas.DTO.ReservaDTO;
+import com.msreservas.ms_reservas.DTO.ReservaRequestDTO;
+import com.msreservas.ms_reservas.Service.ReservaService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import com.msreservas.ms_reservas.DTO.ReservaDTO;
-import com.msreservas.ms_reservas.DTO.ReservaRequestDTO;
-import com.msreservas.ms_reservas.Service.ReservaService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.hateoas.CollectionModel;
+import org.springframework.hateoas.EntityModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.util.List;
+
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
 
 @RestController
 @RequestMapping("/api/v1/reservas")
@@ -25,7 +29,16 @@ public class ReservaController {
 
     @Autowired
     private ReservaService reservaService;
-    //Listar reservas
+
+    private EntityModel<ReservaDTO> agregarLinks(ReservaDTO reserva) {
+        return EntityModel.of(reserva,
+                linkTo(methodOn(ReservaController.class).buscarPorId(reserva.getId())).withSelfRel(),
+                linkTo(methodOn(ReservaController.class).listar()).withRel("todas-las-reservas"),
+                linkTo(methodOn(ReservaController.class).buscarActivasPorDiasMayor(3)).withRel("reservas-activas-dias-mayor"),
+                linkTo(methodOn(ReservaController.class).buscarDesdeFecha(LocalDate.now())).withRel("reservas-desde-fecha")
+        );
+    }
+
     @Operation(summary = "Listar reservas", description = "Obtiene todas las reservas registradas en el sistema.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Reservas encontradas"),
@@ -33,16 +46,24 @@ public class ReservaController {
             @ApiResponse(responseCode = "500", description = "Error interno del servidor", content = @Content)
     })
     @GetMapping
-    public ResponseEntity<List<ReservaDTO>> listar(){
+    public ResponseEntity<CollectionModel<EntityModel<ReservaDTO>>> listar() {
         List<ReservaDTO> reservas = reservaService.findAll();
 
-        if(reservas.isEmpty()){
+        if (reservas.isEmpty()) {
             return ResponseEntity.noContent().build();
         }
 
-        return ResponseEntity.ok(reservas);
+        List<EntityModel<ReservaDTO>> reservasConLinks = reservas.stream()
+                .map(this::agregarLinks)
+                .toList();
+
+        CollectionModel<EntityModel<ReservaDTO>> collectionModel =
+                CollectionModel.of(reservasConLinks,
+                        linkTo(methodOn(ReservaController.class).listar()).withSelfRel());
+
+        return ResponseEntity.ok(collectionModel);
     }
-    //Buscar reserva por ID
+
     @Operation(summary = "Buscar reserva por ID", description = "Obtiene una reserva específica según su identificador.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Reserva encontrada"),
@@ -50,12 +71,15 @@ public class ReservaController {
             @ApiResponse(responseCode = "500", description = "Error interno del servidor", content = @Content)
     })
     @GetMapping("/{id}")
-    public ResponseEntity<ReservaDTO> buscarPorId(
+    public ResponseEntity<EntityModel<ReservaDTO>> buscarPorId(
             @Parameter(description = "ID de la reserva a buscar", example = "1")
-            @PathVariable Integer id){
-        return ResponseEntity.ok(reservaService.findById(id));
+            @PathVariable Integer id) {
+
+        ReservaDTO reserva = reservaService.findById(id);
+
+        return ResponseEntity.ok(agregarLinks(reserva));
     }
-    //Crear reserva
+
     @Operation(summary = "Crear reserva", description = "Registra una nueva reserva en el sistema.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Reserva creada correctamente"),
@@ -63,11 +87,16 @@ public class ReservaController {
             @ApiResponse(responseCode = "500", description = "Error interno del servidor", content = @Content)
     })
     @PostMapping
-    public ResponseEntity<ReservaDTO> guardar(@Valid @RequestBody ReservaRequestDTO dto){
-        return ResponseEntity.status(HttpStatus.CREATED).body(reservaService.save(dto));
+    public ResponseEntity<EntityModel<ReservaDTO>> guardar(
+            @Valid @RequestBody ReservaRequestDTO dto) {
+
+        ReservaDTO reservaGuardada = reservaService.save(dto);
+
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(agregarLinks(reservaGuardada));
     }
 
-    //Actualizar reserva por ID
     @Operation(summary = "Actualizar reserva", description = "Actualiza los datos de una reserva existente según su ID.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Reserva actualizada correctamente"),
@@ -76,14 +105,16 @@ public class ReservaController {
             @ApiResponse(responseCode = "500", description = "Error interno del servidor", content = @Content)
     })
     @PutMapping("/{id}")
-    public ResponseEntity<ReservaDTO> actualizar(
+    public ResponseEntity<EntityModel<ReservaDTO>> actualizar(
             @Parameter(description = "ID de la reserva a actualizar", example = "1")
             @PathVariable Integer id,
-            @Valid @RequestBody ReservaRequestDTO dto){
-        return ResponseEntity.ok(reservaService.update(id, dto));
+            @Valid @RequestBody ReservaRequestDTO dto) {
+
+        ReservaDTO reservaActualizada = reservaService.update(id, dto);
+
+        return ResponseEntity.ok(agregarLinks(reservaActualizada));
     }
 
-    //Eliminar reservas por ID
     @Operation(summary = "Eliminar reserva", description = "Elimina una reserva existente según su ID.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "Reserva eliminada correctamente", content = @Content),
@@ -93,17 +124,17 @@ public class ReservaController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> eliminar(
             @Parameter(description = "ID de la reserva a eliminar", example = "1")
-            @PathVariable Integer id){
+            @PathVariable Integer id) {
+
         boolean eliminado = reservaService.delete(id);
 
-        if(!eliminado){
+        if (!eliminado) {
             return ResponseEntity.notFound().build();
         }
 
         return ResponseEntity.noContent().build();
     }
 
-    //QUERY
     @Operation(summary = "Buscar reservas activas por duración mayor",
             description = "Obtiene reservas activas cuya duración en días sea mayor al valor indicado.")
     @ApiResponses(value = {
@@ -112,20 +143,29 @@ public class ReservaController {
             @ApiResponse(responseCode = "500", description = "Error interno del servidor", content = @Content)
     })
     @GetMapping("/activas/dias-mayor/{dias}")
-    public ResponseEntity<List<ReservaDTO>> buscarActivasPorDiasMayor(
+    public ResponseEntity<CollectionModel<EntityModel<ReservaDTO>>> buscarActivasPorDiasMayor(
             @Parameter(description = "Cantidad mínima de días de duración", example = "3")
-            @PathVariable Integer dias){
+            @PathVariable Integer dias) {
 
         List<ReservaDTO> reservas = reservaService.buscarActivasPorDiasMayor(dias);
 
-        if(reservas.isEmpty()){
+        if (reservas.isEmpty()) {
             return ResponseEntity.noContent().build();
         }
 
-        return ResponseEntity.ok(reservas);
+        List<EntityModel<ReservaDTO>> reservasConLinks = reservas.stream()
+                .map(this::agregarLinks)
+                .toList();
+
+        CollectionModel<EntityModel<ReservaDTO>> collectionModel =
+                CollectionModel.of(reservasConLinks,
+                        linkTo(methodOn(ReservaController.class)
+                                .buscarActivasPorDiasMayor(dias)).withSelfRel(),
+                        linkTo(methodOn(ReservaController.class).listar()).withRel("todas-las-reservas"));
+
+        return ResponseEntity.ok(collectionModel);
     }
 
-    //QUERY
     @Operation(summary = "Buscar reservas desde una fecha",
             description = "Obtiene reservas cuya fecha de inicio sea igual o posterior a la fecha indicada.")
     @ApiResponses(value = {
@@ -135,16 +175,26 @@ public class ReservaController {
             @ApiResponse(responseCode = "500", description = "Error interno del servidor", content = @Content)
     })
     @GetMapping("/desde-fecha/{fecha}")
-    public ResponseEntity<List<ReservaDTO>> buscarDesdeFecha(
+    public ResponseEntity<CollectionModel<EntityModel<ReservaDTO>>> buscarDesdeFecha(
             @Parameter(description = "Fecha inicial de búsqueda en formato yyyy-mm-dd", example = "2026-03-15")
-            @PathVariable LocalDate fecha){
+            @PathVariable LocalDate fecha) {
 
         List<ReservaDTO> reservas = reservaService.buscarDesdeFecha(fecha);
 
-        if(reservas.isEmpty()){
+        if (reservas.isEmpty()) {
             return ResponseEntity.noContent().build();
         }
 
-        return ResponseEntity.ok(reservas);
+        List<EntityModel<ReservaDTO>> reservasConLinks = reservas.stream()
+                .map(this::agregarLinks)
+                .toList();
+
+        CollectionModel<EntityModel<ReservaDTO>> collectionModel =
+                CollectionModel.of(reservasConLinks,
+                        linkTo(methodOn(ReservaController.class)
+                                .buscarDesdeFecha(fecha)).withSelfRel(),
+                        linkTo(methodOn(ReservaController.class).listar()).withRel("todas-las-reservas"));
+
+        return ResponseEntity.ok(collectionModel);
     }
 }

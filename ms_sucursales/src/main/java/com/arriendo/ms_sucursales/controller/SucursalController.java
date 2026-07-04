@@ -1,5 +1,6 @@
 package com.arriendo.ms_sucursales.controller;
 
+import com.arriendo.ms_sucursales.assembler.SucursalModelAssembler;
 import com.arriendo.ms_sucursales.dto.SucursalRequestDTO;
 import com.arriendo.ms_sucursales.dto.SucursalResponseDTO;
 import com.arriendo.ms_sucursales.model.Sucursal;
@@ -18,8 +19,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
 
 @RestController
@@ -30,29 +29,16 @@ public class SucursalController {
     @Autowired
     private SucursalService sucursalService;
 
-    private EntityModel<Sucursal> agregarLinks(Sucursal sucursal) {
-        return EntityModel.of(
-                sucursal,
-                linkTo(methodOn(SucursalController.class).buscarPorId(sucursal.getId())).withSelfRel(),
-                linkTo(methodOn(SucursalController.class).listar()).withRel("todas-las-sucursales"),
-                linkTo(methodOn(SucursalController.class).buscarOperativas()).withRel("sucursales-operativas")
-        );
-    }
+    @Autowired
+    private SucursalModelAssembler sucursalModelAssembler;
 
     @Operation(summary = "Listar sucursales", description = "Obtiene todas las sucursales registradas.")
     @GetMapping
     public ResponseEntity<CollectionModel<EntityModel<Sucursal>>> listar() {
 
-        List<EntityModel<Sucursal>> sucursales = sucursalService.obtenerTodas()
-                .stream()
-                .map(this::agregarLinks)
-                .toList();
-
         CollectionModel<EntityModel<Sucursal>> respuesta =
-                CollectionModel.of(
-                        sucursales,
-                        linkTo(methodOn(SucursalController.class).listar()).withSelfRel()
-                );
+                sucursalModelAssembler.toCollectionModel(sucursalService.obtenerTodas())
+                        .add(linkTo(methodOn(SucursalController.class).listar()).withSelfRel());
 
         return ResponseEntity.ok(respuesta);
     }
@@ -61,16 +47,9 @@ public class SucursalController {
     @GetMapping("/operativas")
     public ResponseEntity<CollectionModel<EntityModel<Sucursal>>> buscarOperativas() {
 
-        List<EntityModel<Sucursal>> sucursales = sucursalService.buscarOperativas()
-                .stream()
-                .map(this::agregarLinks)
-                .toList();
-
         CollectionModel<EntityModel<Sucursal>> respuesta =
-                CollectionModel.of(
-                        sucursales,
-                        linkTo(methodOn(SucursalController.class).buscarOperativas()).withSelfRel()
-                );
+                sucursalModelAssembler.toCollectionModel(sucursalService.buscarOperativas())
+                        .add(linkTo(methodOn(SucursalController.class).buscarOperativas()).withSelfRel());
 
         return ResponseEntity.ok(respuesta);
     }
@@ -82,7 +61,7 @@ public class SucursalController {
             @PathVariable Integer id) {
 
         return ResponseEntity.ok(
-                agregarLinks(sucursalService.obtenerPorId(id))
+                sucursalModelAssembler.toModel(sucursalService.obtenerPorId(id))
         );
     }
 
@@ -102,7 +81,7 @@ public class SucursalController {
             @Valid @RequestBody SucursalRequestDTO dto) {
 
         return ResponseEntity.ok(
-                agregarLinks(sucursalService.actualizar(id, dto))
+                sucursalModelAssembler.toModel(sucursalService.actualizar(id, dto))
         );
     }
 

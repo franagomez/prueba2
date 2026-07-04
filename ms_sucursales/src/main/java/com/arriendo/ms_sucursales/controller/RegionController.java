@@ -1,5 +1,6 @@
 package com.arriendo.ms_sucursales.controller;
 
+import com.arriendo.ms_sucursales.assembler.RegionModelAssembler;
 import com.arriendo.ms_sucursales.dto.RegionRequestDTO;
 import com.arriendo.ms_sucursales.dto.RegionResponseDTO;
 import com.arriendo.ms_sucursales.model.Region;
@@ -30,13 +31,8 @@ public class RegionController {
     @Autowired
     private RegionService regionService;
 
-    private EntityModel<Region> agregarLinks(Region region) {
-        return EntityModel.of(
-                region,
-                linkTo(methodOn(RegionController.class).buscarPorId(region.getId())).withSelfRel(),
-                linkTo(methodOn(RegionController.class).listar()).withRel("todas-las-regiones")
-        );
-    }
+    @Autowired
+    private RegionModelAssembler regionModelAssembler;
 
     @Operation(summary = "Listar regiones", description = "Obtiene todas las regiones registradas en el sistema.")
     @ApiResponses(value = {
@@ -52,15 +48,9 @@ public class RegionController {
             return ResponseEntity.noContent().build();
         }
 
-        List<EntityModel<Region>> regionesConLinks = regiones.stream()
-                .map(this::agregarLinks)
-                .toList();
-
         CollectionModel<EntityModel<Region>> respuesta =
-                CollectionModel.of(
-                        regionesConLinks,
-                        linkTo(methodOn(RegionController.class).listar()).withSelfRel()
-                );
+                regionModelAssembler.toCollectionModel(regiones)
+                        .add(linkTo(methodOn(RegionController.class).listar()).withSelfRel());
 
         return ResponseEntity.ok(respuesta);
     }
@@ -77,7 +67,7 @@ public class RegionController {
             @PathVariable Integer id) {
 
         Region region = regionService.obtenerPorId(id);
-        return ResponseEntity.ok(agregarLinks(region));
+        return ResponseEntity.ok(regionModelAssembler.toModel(region));
     }
 
     @Operation(summary = "Crear región", description = "Registra una nueva región en el sistema.")
@@ -106,7 +96,7 @@ public class RegionController {
             @Valid @RequestBody RegionRequestDTO dto) {
 
         Region region = regionService.actualizar(id, dto);
-        return ResponseEntity.ok(agregarLinks(region));
+        return ResponseEntity.ok(regionModelAssembler.toModel(region));
     }
 
     @Operation(summary = "Eliminar región", description = "Elimina una región existente según su identificador.")

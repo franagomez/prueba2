@@ -28,7 +28,7 @@ public class DataLoader implements CommandLineRunner {
 
         if (regionRepository.count() == 0) {
 
-            Region region1 = regionRepository.save(
+            Region metropolitana = regionRepository.save(
                     new Region(
                             null,
                             "Metropolitana",
@@ -38,13 +38,53 @@ public class DataLoader implements CommandLineRunner {
                             LocalDate.of(2025, 1, 1)
                     ));
 
-            Region region2 = regionRepository.save(
+            Region valparaiso = regionRepository.save(
                     new Region(
                             null,
                             "Valparaíso",
                             "VAL",
                             5,
                             true,
+                            LocalDate.of(2025, 1, 1)
+                    ));
+
+            Region biobio = regionRepository.save(
+                    new Region(
+                            null,
+                            "Biobío",
+                            "BIO",
+                            8,
+                            true,
+                            LocalDate.of(2025, 1, 1)
+                    ));
+
+            Region araucania = regionRepository.save(
+                    new Region(
+                            null,
+                            "La Araucanía",
+                            "ARA",
+                            9,
+                            true,
+                            LocalDate.of(2025, 1, 1)
+                    ));
+
+            Region antofagasta = regionRepository.save(
+                    new Region(
+                            null,
+                            "Antofagasta",
+                            "ANT",
+                            2,
+                            true,
+                            LocalDate.of(2025, 1, 1)
+                    ));
+
+            Region losLagos = regionRepository.save(
+                    new Region(
+                            null,
+                            "Los Lagos",
+                            "LL",
+                            10,
+                            false,
                             LocalDate.of(2025, 1, 1)
                     ));
 
@@ -55,7 +95,17 @@ public class DataLoader implements CommandLineRunner {
                     50,
                     true,
                     LocalDate.of(2020, 5, 10),
-                    region1
+                    metropolitana
+            ));
+
+            sucursalRepository.save(new Sucursal(
+                    null,
+                    "Sucursal Las Condes",
+                    "Av. Apoquindo 4500",
+                    35,
+                    true,
+                    LocalDate.of(2022, 3, 12),
+                    metropolitana
             ));
 
             sucursalRepository.save(new Sucursal(
@@ -65,7 +115,37 @@ public class DataLoader implements CommandLineRunner {
                     30,
                     true,
                     LocalDate.of(2021, 8, 15),
-                    region2
+                    valparaiso
+            ));
+
+            sucursalRepository.save(new Sucursal(
+                    null,
+                    "Sucursal Concepción",
+                    "Barros Arana 789",
+                    25,
+                    true,
+                    LocalDate.of(2021, 11, 3),
+                    biobio
+            ));
+
+            sucursalRepository.save(new Sucursal(
+                    null,
+                    "Sucursal Temuco",
+                    "Av. Alemania 200",
+                    20,
+                    true,
+                    LocalDate.of(2023, 2, 18),
+                    araucania
+            ));
+
+            sucursalRepository.save(new Sucursal(
+                    null,
+                    "Sucursal Antofagasta Centro",
+                    "Av. Grecia 1500",
+                    18,
+                    true,
+                    LocalDate.of(2023, 6, 7),
+                    antofagasta
             ));
 
             sucursalRepository.save(new Sucursal(
@@ -75,7 +155,7 @@ public class DataLoader implements CommandLineRunner {
                     10,
                     false,
                     LocalDate.of(2019, 2, 1),
-                    region1
+                    metropolitana
             ));
         }
     }

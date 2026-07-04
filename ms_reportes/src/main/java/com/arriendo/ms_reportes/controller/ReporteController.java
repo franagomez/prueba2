@@ -1,5 +1,6 @@
 package com.arriendo.ms_reportes.controller;
 
+import com.arriendo.ms_reportes.assembler.ReporteModelAssembler;
 import com.arriendo.ms_reportes.dto.ReporteRequestDTO;
 import com.arriendo.ms_reportes.dto.ReporteResponseDTO;
 import com.arriendo.ms_reportes.model.Reporte;
@@ -27,14 +28,8 @@ public class ReporteController {
     @Autowired
     private ReporteService reporteService;
 
-    private EntityModel<Reporte> agregarLinks(Reporte reporte) {
-        return EntityModel.of(reporte,
-                linkTo(methodOn(ReporteController.class).buscarPorId(reporte.getId())).withSelfRel(),
-                linkTo(methodOn(ReporteController.class).listar()).withRel("todos-los-reportes"),
-                linkTo(methodOn(ReporteController.class).obtenerPagos()).withRel("pagos"),
-                linkTo(methodOn(ReporteController.class).obtenerReservas()).withRel("reservas")
-        );
-    }
+    @Autowired
+    private ReporteModelAssembler reporteModelAssembler;
 
     @Operation(summary = "Listar reportes")
     @GetMapping
@@ -43,14 +38,10 @@ public class ReporteController {
 
         if (reportes.isEmpty()) return ResponseEntity.noContent().build();
 
-        List<EntityModel<Reporte>> reportesConLinks = reportes.stream()
-                .map(this::agregarLinks)
-                .toList();
+        CollectionModel<EntityModel<Reporte>> reportesConLinks = reporteModelAssembler.toCollectionModel(reportes);
+        reportesConLinks.add(linkTo(methodOn(ReporteController.class).listar()).withSelfRel());
 
-        return ResponseEntity.ok(CollectionModel.of(
-                reportesConLinks,
-                linkTo(methodOn(ReporteController.class).listar()).withSelfRel()
-        ));
+        return ResponseEntity.ok(reportesConLinks);
     }
 
     @Operation(summary = "Obtener pagos")
@@ -72,7 +63,7 @@ public class ReporteController {
     @Operation(summary = "Buscar reporte por ID")
     @GetMapping("/{id}")
     public ResponseEntity<EntityModel<Reporte>> buscarPorId(@PathVariable Long id) {
-        return ResponseEntity.ok(agregarLinks(reporteService.obtenerPorId(id)));
+        return ResponseEntity.ok(reporteModelAssembler.toModel(reporteService.obtenerPorId(id)));
     }
 
     @Operation(summary = "Registrar reporte")
@@ -87,7 +78,7 @@ public class ReporteController {
             @PathVariable Long id,
             @Valid @RequestBody ReporteRequestDTO dto) {
 
-        return ResponseEntity.ok(agregarLinks(reporteService.actualizar(id, dto)));
+        return ResponseEntity.ok(reporteModelAssembler.toModel(reporteService.actualizar(id, dto)));
     }
 
     @Operation(summary = "Eliminar reporte")

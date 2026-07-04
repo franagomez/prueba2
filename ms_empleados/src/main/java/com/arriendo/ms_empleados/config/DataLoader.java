@@ -53,6 +53,50 @@ public class DataLoader implements CommandLineRunner {
                     "Asistente Administrativo",
                     LocalDate.of(2023, 8, 20)
             ));
+
+            empleadoRepository.save(new Empleado(
+                    null,
+                    "Matias",
+                    "Fernandez",
+                    "matias.fernandez@empresa.cl",
+                    1050000.0,
+                    true,
+                    "Jefe de Sucursal",
+                    LocalDate.of(2022, 5, 2)
+            ));
+
+            empleadoRepository.save(new Empleado(
+                    null,
+                    "Camila",
+                    "Torres",
+                    "camila.torres@empresa.cl",
+                    690000.0,
+                    true,
+                    "Recepcionista",
+                    LocalDate.of(2024, 11, 4)
+            ));
+
+            empleadoRepository.save(new Empleado(
+                    null,
+                    "Diego",
+                    "Vergara",
+                    "diego.vergara@empresa.cl",
+                    980000.0,
+                    false,
+                    "Mecánico",
+                    LocalDate.of(2021, 7, 30)
+            ));
+
+            empleadoRepository.save(new Empleado(
+                    null,
+                    "Javiera",
+                    "Contreras",
+                    "javiera.contreras@empresa.cl",
+                    1150000.0,
+                    true,
+                    "Supervisora de Flota",
+                    LocalDate.of(2024, 2, 18)
+            ));
         }
     }
 }

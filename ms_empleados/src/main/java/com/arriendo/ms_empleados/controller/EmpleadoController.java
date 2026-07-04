@@ -1,5 +1,6 @@
 package com.arriendo.ms_empleados.controller;
 
+import com.arriendo.ms_empleados.assembler.EmpleadoModelAssembler;
 import com.arriendo.ms_empleados.dto.EmpleadoRequestDTO;
 import com.arriendo.ms_empleados.dto.EmpleadoResponseDTO;
 import com.arriendo.ms_empleados.model.Empleado;
@@ -29,13 +30,8 @@ public class EmpleadoController {
     @Autowired
     private EmpleadoService empleadoService;
 
-    private EntityModel<Empleado> agregarLinks(Empleado empleado) {
-        return EntityModel.of(empleado,
-                linkTo(methodOn(EmpleadoController.class).buscarPorId(empleado.getId())).withSelfRel(),
-                linkTo(methodOn(EmpleadoController.class).listar()).withRel("todos-los-empleados"),
-                linkTo(methodOn(EmpleadoController.class).buscarActivosPorAnio(2024)).withRel("empleados-activos-por-anio")
-        );
-    }
+    @Autowired
+    private EmpleadoModelAssembler empleadoModelAssembler;
 
     @Operation(summary = "Listar empleados", description = "Obtiene todos los empleados registrados en el sistema.")
     @ApiResponses(value = {
@@ -52,14 +48,8 @@ public class EmpleadoController {
             return ResponseEntity.noContent().build();
         }
 
-        List<EntityModel<Empleado>> empleadosConLinks = empleados.stream()
-                .map(this::agregarLinks)
-                .toList();
-
-        CollectionModel<EntityModel<Empleado>> respuesta = CollectionModel.of(
-                empleadosConLinks,
-                linkTo(methodOn(EmpleadoController.class).listar()).withSelfRel()
-        );
+        CollectionModel<EntityModel<Empleado>> respuesta = empleadoModelAssembler.toCollectionModel(empleados);
+        respuesta.add(linkTo(methodOn(EmpleadoController.class).listar()).withSelfRel());
 
         return ResponseEntity.ok(respuesta);
     }
@@ -82,15 +72,9 @@ public class EmpleadoController {
             return ResponseEntity.noContent().build();
         }
 
-        List<EntityModel<Empleado>> empleadosConLinks = empleados.stream()
-                .map(this::agregarLinks)
-                .toList();
-
-        CollectionModel<EntityModel<Empleado>> respuesta = CollectionModel.of(
-                empleadosConLinks,
-                linkTo(methodOn(EmpleadoController.class).buscarActivosPorAnio(anio)).withSelfRel(),
-                linkTo(methodOn(EmpleadoController.class).listar()).withRel("todos-los-empleados")
-        );
+        CollectionModel<EntityModel<Empleado>> respuesta = empleadoModelAssembler.toCollectionModel(empleados);
+        respuesta.add(linkTo(methodOn(EmpleadoController.class).buscarActivosPorAnio(anio)).withSelfRel());
+        respuesta.add(linkTo(methodOn(EmpleadoController.class).listar()).withRel("todos-los-empleados"));
 
         return ResponseEntity.ok(respuesta);
     }
@@ -107,7 +91,7 @@ public class EmpleadoController {
             @PathVariable Long id) {
 
         Empleado empleado = empleadoService.obtenerPorId(id);
-        return ResponseEntity.ok(agregarLinks(empleado));
+        return ResponseEntity.ok(empleadoModelAssembler.toModel(empleado));
     }
 
     @Operation(summary = "Registrar empleado", description = "Registra un nuevo empleado en el sistema.")
@@ -136,7 +120,7 @@ public class EmpleadoController {
             @Valid @RequestBody EmpleadoRequestDTO dto) {
 
         Empleado empleado = empleadoService.actualizar(id, dto);
-        return ResponseEntity.ok(agregarLinks(empleado));
+        return ResponseEntity.ok(empleadoModelAssembler.toModel(empleado));
     }
 
     @Operation(summary = "Eliminar empleado", description = "Elimina un empleado del sistema según su ID.")

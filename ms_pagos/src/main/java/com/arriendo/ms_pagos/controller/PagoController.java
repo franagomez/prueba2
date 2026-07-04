@@ -1,5 +1,6 @@
 package com.arriendo.ms_pagos.controller;
 
+import com.arriendo.ms_pagos.assembler.PagoModelAssembler;
 import com.arriendo.ms_pagos.dto.PagoRequestDTO;
 import com.arriendo.ms_pagos.dto.PagoResponseDTO;
 import com.arriendo.ms_pagos.model.Pago;
@@ -32,13 +33,8 @@ public class PagoController {
     @Autowired
     private PagoService pagoService;
 
-    private EntityModel<Pago> agregarLinks(Pago pago) {
-        return EntityModel.of(pago,
-                linkTo(methodOn(PagoController.class).buscarPorId(pago.getId())).withSelfRel(),
-                linkTo(methodOn(PagoController.class).listar()).withRel("todos-los-pagos"),
-                linkTo(methodOn(PagoController.class).buscarPorRango(10000.0, 100000.0)).withRel("pagos-por-rango")
-        );
-    }
+    @Autowired
+    private PagoModelAssembler pagoModelAssembler;
 
     @Operation(
             summary = "Obtener todos los pagos",
@@ -50,15 +46,10 @@ public class PagoController {
     })
     @GetMapping
     public ResponseEntity<CollectionModel<EntityModel<Pago>>> listar() {
-        List<EntityModel<Pago>> pagos = pagoService.obtenerTodos()
-                .stream()
-                .map(this::agregarLinks)
-                .toList();
+        CollectionModel<EntityModel<Pago>> respuesta = pagoModelAssembler.toCollectionModel(
+                pagoService.obtenerTodos());
 
-        CollectionModel<EntityModel<Pago>> respuesta = CollectionModel.of(
-                pagos,
-                linkTo(methodOn(PagoController.class).listar()).withSelfRel()
-        );
+        respuesta.add(linkTo(methodOn(PagoController.class).listar()).withSelfRel());
 
         return ResponseEntity.ok(respuesta);
     }
@@ -78,16 +69,11 @@ public class PagoController {
             @Parameter(description = "Monto máximo del rango", example = "100000")
             @RequestParam Double maximo) {
 
-        List<EntityModel<Pago>> pagos = pagoService.buscarPorRango(minimo, maximo)
-                .stream()
-                .map(this::agregarLinks)
-                .toList();
+        CollectionModel<EntityModel<Pago>> respuesta = pagoModelAssembler.toCollectionModel(
+                pagoService.buscarPorRango(minimo, maximo));
 
-        CollectionModel<EntityModel<Pago>> respuesta = CollectionModel.of(
-                pagos,
-                linkTo(methodOn(PagoController.class).buscarPorRango(minimo, maximo)).withSelfRel(),
-                linkTo(methodOn(PagoController.class).listar()).withRel("todos-los-pagos")
-        );
+        respuesta.add(linkTo(methodOn(PagoController.class).buscarPorRango(minimo, maximo)).withSelfRel());
+        respuesta.add(linkTo(methodOn(PagoController.class).listar()).withRel("todos-los-pagos"));
 
         return ResponseEntity.ok(respuesta);
     }
@@ -107,7 +93,7 @@ public class PagoController {
             @PathVariable Long id) {
 
         Pago pago = pagoService.obtenerPorId(id);
-        return ResponseEntity.ok(agregarLinks(pago));
+        return ResponseEntity.ok(pagoModelAssembler.toModel(pago));
     }
 
     @Operation(

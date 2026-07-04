@@ -1,0 +1,10 @@
+# Configuración común a todos los perfiles.
+# No se fija un perfil activo por defecto: debe elegirse explícitamente
+# mediante la variable de entorno SPRING_PROFILES_ACTIVE (dev|test).
+# En desarrollo local se espera usar el perfil "dev".
+spring:
+  application:
+    name: ms-pagos
+
+server:
+  port: 8084

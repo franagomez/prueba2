@@ -1,5 +1,6 @@
 package com.msvehiculos.ms_vehiculos.Controller;
 
+import com.msvehiculos.ms_vehiculos.Assembler.VehiculoModelAssembler;
 import com.msvehiculos.ms_vehiculos.DTO.VehiculoDTO;
 import com.msvehiculos.ms_vehiculos.DTO.VehiculoRequestDTO;
 import com.msvehiculos.ms_vehiculos.Service.VehiculoService;
@@ -10,7 +11,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.hateoas.CollectionModel;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.http.HttpStatus;
@@ -21,20 +22,18 @@ import java.util.List;
 
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/v1/vehiculos")
 @Tag(name = "Vehículos", description = "Operaciones CRUD y consultas de vehículos")
 public class VehiculoController {
 
-    @Autowired
-    private VehiculoService vehiculoService;
+    private final VehiculoService vehiculoService;
+    private final VehiculoModelAssembler vehiculoModelAssembler;
 
-    private EntityModel<VehiculoDTO> agregarLinks(VehiculoDTO vehiculo) {
-        return EntityModel.of(vehiculo,
-                linkTo(methodOn(VehiculoController.class).buscarPorId(vehiculo.getId())).withSelfRel(),
-                linkTo(methodOn(VehiculoController.class).listar()).withRel("todos-los-vehiculos"),
-                linkTo(methodOn(VehiculoController.class).buscarDisponiblesPorPrecioMenor(35000.0)).withRel("vehiculos-disponibles-precio-menor")
-        );
+    public VehiculoController(VehiculoService vehiculoService, VehiculoModelAssembler vehiculoModelAssembler) {
+        this.vehiculoService = vehiculoService;
+        this.vehiculoModelAssembler = vehiculoModelAssembler;
     }
 
     @Operation(summary = "Listar vehículos", description = "Obtiene todos los vehículos registrados en el sistema")
@@ -45,23 +44,20 @@ public class VehiculoController {
     })
     @GetMapping
     public ResponseEntity<CollectionModel<EntityModel<VehiculoDTO>>> listar() {
-
+        log.info("GET /api/v1/vehiculos");
         List<VehiculoDTO> vehiculos = vehiculoService.findAll();
 
         if (vehiculos.isEmpty()) {
+            log.warn("No se encontraron vehículos registrados");
             return ResponseEntity.noContent().build();
         }
 
         List<EntityModel<VehiculoDTO>> vehiculosConLinks = vehiculos.stream()
-                .map(this::agregarLinks)
+                .map(vehiculoModelAssembler::toModel)
                 .toList();
 
-        CollectionModel<EntityModel<VehiculoDTO>> respuesta = CollectionModel.of(
-                vehiculosConLinks,
-                linkTo(methodOn(VehiculoController.class).listar()).withSelfRel()
-        );
-
-        return ResponseEntity.ok(respuesta);
+        return ResponseEntity.ok(CollectionModel.of(vehiculosConLinks,
+                linkTo(methodOn(VehiculoController.class).listar()).withSelfRel()));
     }
 
     @Operation(summary = "Buscar vehículos por ID", description = "Obtiene un vehículo específico por medio del ID")
@@ -74,9 +70,9 @@ public class VehiculoController {
     public ResponseEntity<EntityModel<VehiculoDTO>> buscarPorId(
             @Parameter(description = "ID del vehículo a buscar", example = "1")
             @PathVariable Integer id) {
-
+        log.info("GET /api/v1/vehiculos/{}", id);
         VehiculoDTO vehiculo = vehiculoService.findById(id);
-        return ResponseEntity.ok(agregarLinks(vehiculo));
+        return ResponseEntity.ok(vehiculoModelAssembler.toModel(vehiculo));
     }
 
     @Operation(summary = "Crear vehículo", description = "Registra un nuevo vehículo en el sistema.")
@@ -87,8 +83,9 @@ public class VehiculoController {
     })
     @PostMapping
     public ResponseEntity<EntityModel<VehiculoDTO>> guardar(@Valid @RequestBody VehiculoRequestDTO dto) {
+        log.info("POST /api/v1/vehiculos con patente {}", dto.getPatente());
         VehiculoDTO vehiculo = vehiculoService.save(dto);
-        return ResponseEntity.status(HttpStatus.CREATED).body(agregarLinks(vehiculo));
+        return ResponseEntity.status(HttpStatus.CREATED).body(vehiculoModelAssembler.toModel(vehiculo));
     }
 
     @Operation(summary = "Actualizar vehículo", description = "Actualiza los datos de un vehículo existente según su ID.")
@@ -103,9 +100,9 @@ public class VehiculoController {
             @Parameter(description = "ID del vehículo a actualizar", example = "1")
             @PathVariable Integer id,
             @Valid @RequestBody VehiculoRequestDTO dto) {
-
+        log.info("PUT /api/v1/vehiculos/{}", id);
         VehiculoDTO vehiculo = vehiculoService.update(id, dto);
-        return ResponseEntity.ok(agregarLinks(vehiculo));
+        return ResponseEntity.ok(vehiculoModelAssembler.toModel(vehiculo));
     }
 
     @Operation(summary = "Eliminar vehículo", description = "Elimina un vehículo existente según su ID.")
@@ -118,13 +115,8 @@ public class VehiculoController {
     public ResponseEntity<Void> eliminar(
             @Parameter(description = "ID del vehículo a eliminar", example = "1")
             @PathVariable Integer id) {
-
-        boolean eliminado = vehiculoService.delete(id);
-
-        if (!eliminado) {
-            return ResponseEntity.notFound().build();
-        }
-
+        log.info("DELETE /api/v1/vehiculos/{}", id);
+        vehiculoService.delete(id);
         return ResponseEntity.noContent().build();
     }
 
@@ -139,7 +131,7 @@ public class VehiculoController {
     public ResponseEntity<CollectionModel<EntityModel<VehiculoDTO>>> buscarDisponiblesPorPrecioMenor(
             @Parameter(description = "Precio máximo diario del vehículo", example = "35000")
             @PathVariable Double precio) {
-
+        log.info("GET /api/v1/vehiculos/disponibles/precio-menor/{}", precio);
         List<VehiculoDTO> vehiculos = vehiculoService.buscarDisponiblesPorPrecioMenor(precio);
 
         if (vehiculos.isEmpty()) {
@@ -147,15 +139,11 @@ public class VehiculoController {
         }
 
         List<EntityModel<VehiculoDTO>> vehiculosConLinks = vehiculos.stream()
-                .map(this::agregarLinks)
+                .map(vehiculoModelAssembler::toModel)
                 .toList();
 
-        CollectionModel<EntityModel<VehiculoDTO>> respuesta = CollectionModel.of(
-                vehiculosConLinks,
+        return ResponseEntity.ok(CollectionModel.of(vehiculosConLinks,
                 linkTo(methodOn(VehiculoController.class).buscarDisponiblesPorPrecioMenor(precio)).withSelfRel(),
-                linkTo(methodOn(VehiculoController.class).listar()).withRel("todos-los-vehiculos")
-        );
-
-        return ResponseEntity.ok(respuesta);
+                linkTo(methodOn(VehiculoController.class).listar()).withRel("todos-los-vehiculos")));
     }
 }

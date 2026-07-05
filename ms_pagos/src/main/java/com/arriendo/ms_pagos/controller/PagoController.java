@@ -12,7 +12,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.hateoas.CollectionModel;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.http.ResponseEntity;
@@ -30,11 +29,13 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
 )
 public class PagoController {
 
-    @Autowired
-    private PagoService pagoService;
+    private final PagoService pagoService;
+    private final PagoModelAssembler pagoModelAssembler;
 
-    @Autowired
-    private PagoModelAssembler pagoModelAssembler;
+    public PagoController(PagoService pagoService, PagoModelAssembler pagoModelAssembler) {
+        this.pagoService = pagoService;
+        this.pagoModelAssembler = pagoModelAssembler;
+    }
 
     @Operation(
             summary = "Obtener todos los pagos",

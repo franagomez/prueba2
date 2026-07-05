@@ -8,7 +8,6 @@ import com.arriendo.ms_empleados.model.Empleado;
 import com.arriendo.ms_empleados.repository.EmpleadoRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -19,8 +18,11 @@ public class EmpleadoService {
     private static final Logger log =
             LoggerFactory.getLogger(EmpleadoService.class);
 
-    @Autowired
-    private EmpleadoRepository empleadoRepository;
+    private final EmpleadoRepository empleadoRepository;
+
+    public EmpleadoService(EmpleadoRepository empleadoRepository) {
+        this.empleadoRepository = empleadoRepository;
+    }
 
     public List<Empleado> obtenerTodos() {
         log.info("Listando todos los empleados");

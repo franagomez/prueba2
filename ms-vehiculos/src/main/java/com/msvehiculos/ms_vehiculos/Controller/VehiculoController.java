@@ -147,3 +147,9 @@ public class VehiculoController {
                 linkTo(methodOn(VehiculoController.class).listar()).withRel("todos-los-vehiculos")));
     }
 }
+
+
+
+
+
+

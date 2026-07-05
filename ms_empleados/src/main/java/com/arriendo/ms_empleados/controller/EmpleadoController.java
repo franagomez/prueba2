@@ -12,7 +12,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.hateoas.CollectionModel;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.http.ResponseEntity;
@@ -27,11 +26,13 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
 @Tag(name = "Empleados", description = "API para la gestión de empleados del sistema de arriendo de vehículos.")
 public class EmpleadoController {
 
-    @Autowired
-    private EmpleadoService empleadoService;
+    private final EmpleadoService empleadoService;
+    private final EmpleadoModelAssembler empleadoModelAssembler;
 
-    @Autowired
-    private EmpleadoModelAssembler empleadoModelAssembler;
+    public EmpleadoController(EmpleadoService empleadoService, EmpleadoModelAssembler empleadoModelAssembler) {
+        this.empleadoService = empleadoService;
+        this.empleadoModelAssembler = empleadoModelAssembler;
+    }
 
     @Operation(summary = "Listar empleados", description = "Obtiene todos los empleados registrados en el sistema.")
     @ApiResponses(value = {

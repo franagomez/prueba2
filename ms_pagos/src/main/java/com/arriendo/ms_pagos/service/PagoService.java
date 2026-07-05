@@ -6,7 +6,6 @@ import com.arriendo.ms_pagos.exception.ResourceNotFoundException;
 import com.arriendo.ms_pagos.mapper.PagoMapper;
 import com.arriendo.ms_pagos.model.Pago;
 import com.arriendo.ms_pagos.repository.PagoRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Import;
 import org.springframework.stereotype.Service;
 
@@ -18,8 +17,11 @@ import org.slf4j.LoggerFactory;
 @Service
 public class PagoService {
 
-    @Autowired
-    private PagoRepository pagoRepository;
+    private final PagoRepository pagoRepository;
+
+    public PagoService(PagoRepository pagoRepository) {
+        this.pagoRepository = pagoRepository;
+    }
 
     public List<Pago> obtenerTodos() {
         return pagoRepository.findAll();

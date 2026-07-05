@@ -158,30 +158,49 @@ public class ClienteServiceTest {
     }
 
     @Test
-    void delete_cuandoExiste_debeEliminarYRetornarTrue() {
+    void update_cuandoNoExiste_debeLanzarResourceNotFoundException() {
+        // Given
+        ClienteRequestDTO requestDTO = crearClienteRequestDTO();
+        when(clienteRepository.findById(99)).thenReturn(Optional.empty());
+
+        // When / Then
+        ResourceNotFoundException exception = assertThrows(
+                ResourceNotFoundException.class,
+                () -> clienteService.update(99, requestDTO)
+        );
+
+        assertEquals("Cliente no encontrado", exception.getMessage());
+
+        verify(clienteRepository, times(1)).findById(99);
+        verify(clienteRepository, never()).save(any());
+        verifyNoInteractions(clienteMapper);
+    }
+
+    @Test
+    void delete_cuandoExiste_debeEliminarCorrectamente() {
         // Given
         when(clienteRepository.existsById(1)).thenReturn(true);
 
         // When
-        boolean resultado = clienteService.delete(1);
+        clienteService.delete(1);
 
         // Then
-        assertTrue(resultado);
-
         verify(clienteRepository, times(1)).existsById(1);
         verify(clienteRepository, times(1)).deleteById(1);
     }
 
     @Test
-    void delete_cuandoNoExiste_debeRetornarFalse() {
+    void delete_cuandoNoExiste_debeLanzarResourceNotFoundException() {
         // Given
         when(clienteRepository.existsById(99)).thenReturn(false);
 
-        // When
-        boolean resultado = clienteService.delete(99);
+        // When / Then
+        ResourceNotFoundException exception = assertThrows(
+                ResourceNotFoundException.class,
+                () -> clienteService.delete(99)
+        );
 
-        // Then
-        assertFalse(resultado);
+        assertEquals("Cliente no encontrado", exception.getMessage());
 
         verify(clienteRepository, times(1)).existsById(99);
         verify(clienteRepository, never()).deleteById(anyInt());

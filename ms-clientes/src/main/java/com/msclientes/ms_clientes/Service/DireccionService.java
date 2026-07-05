@@ -1,6 +1,5 @@
 package com.msclientes.ms_clientes.Service;
 
-
 import com.msclientes.ms_clientes.DTO.DireccionDTO;
 import com.msclientes.ms_clientes.DTO.DireccionRequestDTO;
 import com.msclientes.ms_clientes.Exception.ResourceNotFoundException;
@@ -9,10 +8,9 @@ import com.msclientes.ms_clientes.Model.Cliente;
 import com.msclientes.ms_clientes.Model.Direccion;
 import com.msclientes.ms_clientes.Repository.ClienteRepository;
 import com.msclientes.ms_clientes.Repository.DireccionRepository;
-import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,89 +20,81 @@ import java.util.List;
 @Transactional
 public class DireccionService {
 
-    @Autowired
-    private DireccionRepository direccionRepository;
+    private final DireccionRepository direccionRepository;
+    private final DireccionMapper direccionMapper;
+    private final ClienteRepository clienteRepository;
 
-    @Autowired
-    private DireccionMapper direccionMapper;
+    public DireccionService(DireccionRepository direccionRepository,
+                            DireccionMapper direccionMapper,
+                            ClienteRepository clienteRepository) {
+        this.direccionRepository = direccionRepository;
+        this.direccionMapper = direccionMapper;
+        this.clienteRepository = clienteRepository;
+    }
 
-    @Autowired
-    private ClienteRepository clienteRepository;
-
-
-    // Listar todas las direcciones
-    public List<DireccionDTO>  findAll(){
-
+    @Transactional(readOnly = true)
+    public List<DireccionDTO> findAll() {
         log.info("Listando todas las direcciones");
 
         List<Direccion> direcciones = direccionRepository.findAll();
         List<DireccionDTO> listaDTO = new ArrayList<>();
-        for(Direccion direccion : direcciones){
+        for (Direccion direccion : direcciones) {
             listaDTO.add(direccionMapper.toDireccionDTO(direccion));
         }
 
+        log.info("Se encontraron {} direcciones", listaDTO.size());
         return listaDTO;
     }
 
-    // Buscar direccion por id
-    public DireccionDTO findById(Integer id){
-
+    @Transactional(readOnly = true)
+    public DireccionDTO findById(Integer id) {
         log.info("Buscando dirección con id: {}", id);
 
-        Direccion direccion = direccionRepository.findById(id).orElse(null);
-
-        if(direccion == null) {
-            log.error("Dirección no encontrada con id: {}", id);
-            throw new ResourceNotFoundException("Dirección no encontrada");
-        }
+        Direccion direccion = direccionRepository.findById(id)
+                .orElseThrow(() -> {
+                    log.error("Dirección no encontrada con id: {}", id);
+                    return new ResourceNotFoundException("Dirección no encontrada");
+                });
 
         return direccionMapper.toDireccionDTO(direccion);
     }
 
-    //Crear direccion
-    public DireccionDTO save(DireccionRequestDTO direccionDTO){
-
+    public DireccionDTO save(DireccionRequestDTO direccionDTO) {
         log.info("Guardando nueva dirección para cliente id: {}", direccionDTO.getClienteId());
 
-        // obtenemos el tipo de dato del id y al cliente
-        Cliente cliente = clienteRepository.findById(direccionDTO.getClienteId()).orElse(null);
-
-        if(cliente == null) {
-            log.error("Cliente no encontrado con id: {}", direccionDTO.getClienteId());
-            throw new ResourceNotFoundException("Cliente no encontrado");
-        }
+        Cliente cliente = clienteRepository.findById(direccionDTO.getClienteId())
+                .orElseThrow(() -> {
+                    log.error("Cliente no encontrado con id: {}", direccionDTO.getClienteId());
+                    return new ResourceNotFoundException("Cliente no encontrado");
+                });
 
         Direccion direccion = direccionMapper.toEntity(direccionDTO);
         direccion.setCliente(cliente);
 
         Direccion guardada = direccionRepository.save(direccion);
+        log.info("Dirección guardada correctamente con id: {}", guardada.getId());
 
         return direccionMapper.toDireccionDTO(guardada);
     }
 
-    // Actualizar direccion
-    public DireccionDTO update(Integer id, DireccionRequestDTO direccionDTO){
-
+    public DireccionDTO update(Integer id, DireccionRequestDTO direccionDTO) {
         log.info("Actualizando dirección con id: {}", id);
 
-        Direccion direccion = direccionRepository.findById(id).orElse(null);
+        Direccion direccion = direccionRepository.findById(id)
+                .orElseThrow(() -> {
+                    log.error("Dirección no encontrada con id: {} al intentar actualizar", id);
+                    return new ResourceNotFoundException("Dirección no encontrada");
+                });
 
-        if(direccion == null) {
-            if (log.isErrorEnabled()) {
-                log.error("Direccion no encontrada con id: {}", id);
-            } throw new ResourceNotFoundException("Direccion no encontrada");
-        }
-
-        Cliente cliente = clienteRepository.findById(direccionDTO.getClienteId()).orElse(null);
-        if (cliente == null) {
-            log.error("Cliente no encontrado con id: {}", direccionDTO.getClienteId());
-
-            throw new ResourceNotFoundException("Cliente no encontrado");
-        }
+        Cliente cliente = clienteRepository.findById(direccionDTO.getClienteId())
+                .orElseThrow(() -> {
+                    log.error("Cliente no encontrado con id: {}", direccionDTO.getClienteId());
+                    return new ResourceNotFoundException("Cliente no encontrado");
+                });
 
         direccion.setCalle(direccionDTO.getCalle());
         direccion.setNumero(direccionDTO.getNumero());
-        direccion.setComuna( direccionDTO.getComuna());
+        direccion.setComuna(direccionDTO.getComuna());
         direccion.setCiudad(direccionDTO.getCiudad());
         direccion.setCodigoPostal(direccionDTO.getCodigoPostal());
         direccion.setPrincipal(direccionDTO.isPrincipal());
@@ -112,19 +102,20 @@ public class DireccionService {
         direccion.setCliente(cliente);
 
         Direccion actualizada = direccionRepository.save(direccion);
+        log.info("Dirección con id: {} actualizada correctamente", actualizada.getId());
 
         return direccionMapper.toDireccionDTO(actualizada);
     }
 
-    // Eliminar direccion
-    public boolean delete(Integer id){
+    public void delete(Integer id) {
+        log.info("Eliminando dirección con id: {}", id);
 
-        if (direccionRepository.existsById(id)) {
-            direccionRepository.deleteById(id);
-            return true;
+        if (!direccionRepository.existsById(id)) {
+            log.error("Dirección no encontrada con id: {} al intentar eliminar", id);
+            throw new ResourceNotFoundException("Dirección no encontrada");
         }
 
-        return false;
+        direccionRepository.deleteById(id);
+        log.info("Dirección con id: {} eliminada correctamente", id);
     }
-
 }

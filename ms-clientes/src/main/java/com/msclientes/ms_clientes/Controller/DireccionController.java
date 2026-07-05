@@ -1,6 +1,6 @@
 package com.msclientes.ms_clientes.Controller;
 
-
+import com.msclientes.ms_clientes.Assembler.DireccionModelAssembler;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -11,23 +11,33 @@ import com.msclientes.ms_clientes.DTO.DireccionDTO;
 import com.msclientes.ms_clientes.DTO.DireccionRequestDTO;
 import com.msclientes.ms_clientes.Service.DireccionService;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.hateoas.CollectionModel;
+import org.springframework.hateoas.EntityModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
+
+@Slf4j
 @RestController
 @RequestMapping("/api/v1/direcciones")
 @Tag(name = "Direcciones", description = "Operaciones CRUD de direcciones asociadas a clientes")
 public class DireccionController {
 
-    @Autowired
-    private DireccionService direccionService;
+    private final DireccionService direccionService;
+    private final DireccionModelAssembler direccionModelAssembler;
 
+    public DireccionController(DireccionService direccionService,
+                               DireccionModelAssembler direccionModelAssembler) {
+        this.direccionService = direccionService;
+        this.direccionModelAssembler = direccionModelAssembler;
+    }
 
-    // Listar todas las direcciones con GET
     @Operation(summary = "Listar direcciones", description = "Obtiene todas las direcciones registradas")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Direcciones encontradas correctamente"),
@@ -35,18 +45,24 @@ public class DireccionController {
             @ApiResponse(responseCode = "500", description = "Error interno del sistema", content = @Content)
     })
     @GetMapping
-    public ResponseEntity<List<DireccionDTO>> listar(){
+    public ResponseEntity<CollectionModel<EntityModel<DireccionDTO>>> listar() {
+        log.info("GET /api/v1/direcciones");
 
         List<DireccionDTO> direcciones = direccionService.findAll();
 
         if (direcciones.isEmpty()) {
+            log.warn("No se encontraron direcciones registradas");
             return ResponseEntity.noContent().build();
         }
 
-        return ResponseEntity.ok(direcciones);
+        List<EntityModel<DireccionDTO>> direccionesConLinks = direcciones.stream()
+                .map(direccionModelAssembler::toModel)
+                .toList();
+
+        return ResponseEntity.ok(CollectionModel.of(direccionesConLinks,
+                linkTo(methodOn(DireccionController.class).listar()).withSelfRel()));
     }
 
-    // Buscar direccion por id
     @Operation(summary = "Buscar dirección por ID", description = "Obtiene una dirección específica mediante su identificador")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Dirección encontrada correctamente"),
@@ -54,28 +70,31 @@ public class DireccionController {
             @ApiResponse(responseCode = "500", description = "Error interno del sistema", content = @Content)
     })
     @GetMapping("/{id}")
-    public ResponseEntity<DireccionDTO> buscarPorId(
+    public ResponseEntity<EntityModel<DireccionDTO>> buscarPorId(
             @Parameter(description = "ID de la dirección", example = "1")
-            @PathVariable Integer id){
+            @PathVariable Integer id) {
 
-        return ResponseEntity.ok(direccionService.findById(id));
+        log.info("GET /api/v1/direcciones/{}", id);
+
+        DireccionDTO direccion = direccionService.findById(id);
+        return ResponseEntity.ok(direccionModelAssembler.toModel(direccion));
     }
 
-    // Crear direccion
     @Operation(summary = "Crear dirección", description = "Registra una nueva dirección asociada a un cliente")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Dirección creada correctamente"),
             @ApiResponse(responseCode = "400", description = "Datos inválidos en la solicitud", content = @Content),
-            @ApiResponse(responseCode = "404", description = "Cliente asociado no encontrado",  content = @Content),
+            @ApiResponse(responseCode = "404", description = "Cliente asociado no encontrado", content = @Content),
             @ApiResponse(responseCode = "500", description = "Error interno del sistema", content = @Content)
     })
     @PostMapping
-    public ResponseEntity<DireccionDTO> guardar(@Valid @RequestBody DireccionRequestDTO dto){
+    public ResponseEntity<EntityModel<DireccionDTO>> guardar(@Valid @RequestBody DireccionRequestDTO dto) {
+        log.info("POST /api/v1/direcciones para cliente id: {}", dto.getClienteId());
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(direccionService.save(dto));
+        DireccionDTO creada = direccionService.save(dto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(direccionModelAssembler.toModel(creada));
     }
 
-    // Actualizar direccion
     @Operation(summary = "Actualizar dirección", description = "Actualiza los datos de una dirección existente")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Dirección actualizada correctamente"),
@@ -84,15 +103,17 @@ public class DireccionController {
             @ApiResponse(responseCode = "500", description = "Error interno del sistema", content = @Content)
     })
     @PutMapping("/{id}")
-    public ResponseEntity<DireccionDTO> actualizar(
+    public ResponseEntity<EntityModel<DireccionDTO>> actualizar(
             @Parameter(description = "ID de la dirección", example = "1")
             @PathVariable Integer id,
-            @Valid @RequestBody DireccionRequestDTO dto){
+            @Valid @RequestBody DireccionRequestDTO dto) {
 
-        return ResponseEntity.ok(direccionService.update(id, dto));
+        log.info("PUT /api/v1/direcciones/{}", id);
+
+        DireccionDTO actualizada = direccionService.update(id, dto);
+        return ResponseEntity.ok(direccionModelAssembler.toModel(actualizada));
     }
 
-    // Eliminar direccion
     @Operation(summary = "Eliminar dirección", description = "Elimina una dirección existente mediante su identificador")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "Dirección eliminada correctamente", content = @Content),
@@ -102,13 +123,11 @@ public class DireccionController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> eliminar(
             @Parameter(description = "ID de la dirección", example = "1")
-            @PathVariable Integer id){
+            @PathVariable Integer id) {
 
-        boolean eliminado = direccionService.delete(id);
+        log.info("DELETE /api/v1/direcciones/{}", id);
 
-        if (!eliminado){
-            return ResponseEntity.notFound().build();
-        }
+        direccionService.delete(id);
         return ResponseEntity.noContent().build();
     }
 }

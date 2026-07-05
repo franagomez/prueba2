@@ -10,7 +10,6 @@ import com.arriendo.ms_reportes.model.Reporte;
 import com.arriendo.ms_reportes.repository.ReporteRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -22,14 +21,15 @@ public class ReporteService {
     private static final Logger log =
             LoggerFactory.getLogger(ReporteService.class);
 
-    @Autowired
-    private ReporteRepository reporteRepository;
+    private final ReporteRepository reporteRepository;
+    private final PagoClient pagoClient;
+    private final ReservaClient reservaClient;
 
-    @Autowired
-    private PagoClient pagoClient;
-
-    @Autowired
-    private ReservaClient reservaClient;
+    public ReporteService(ReporteRepository reporteRepository, PagoClient pagoClient, ReservaClient reservaClient) {
+        this.reporteRepository = reporteRepository;
+        this.pagoClient = pagoClient;
+        this.reservaClient = reservaClient;
+    }
 
     public List<Reporte> obtenerTodos() {
 

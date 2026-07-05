@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import java.util.List;
 import java.util.Map;
 
-@FeignClient(name = "ms-reservas", url = "http://localhost:8083")
+@FeignClient(name = "ms-reservas")
 public interface ReservaClient {
 
     @GetMapping("/api/v1/reservas")

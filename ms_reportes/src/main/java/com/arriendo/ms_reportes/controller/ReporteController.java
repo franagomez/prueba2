@@ -10,7 +10,6 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.responses.*;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.hateoas.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -25,11 +24,13 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
 @Tag(name = "Reportes", description = "API para la gestión de reportes y consulta de pagos y reservas.")
 public class ReporteController {
 
-    @Autowired
-    private ReporteService reporteService;
+    private final ReporteService reporteService;
+    private final ReporteModelAssembler reporteModelAssembler;
 
-    @Autowired
-    private ReporteModelAssembler reporteModelAssembler;
+    public ReporteController(ReporteService reporteService, ReporteModelAssembler reporteModelAssembler) {
+        this.reporteService = reporteService;
+        this.reporteModelAssembler = reporteModelAssembler;
+    }
 
     @Operation(summary = "Listar reportes")
     @GetMapping

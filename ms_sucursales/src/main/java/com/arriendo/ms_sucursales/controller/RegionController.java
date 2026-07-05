@@ -12,7 +12,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.hateoas.CollectionModel;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.http.HttpStatus;
@@ -28,11 +27,13 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
 @Tag(name = "Regiones", description = "Operaciones CRUD de regiones")
 public class RegionController {
 
-    @Autowired
-    private RegionService regionService;
+    private final RegionService regionService;
+    private final RegionModelAssembler regionModelAssembler;
 
-    @Autowired
-    private RegionModelAssembler regionModelAssembler;
+    public RegionController(RegionService regionService, RegionModelAssembler regionModelAssembler) {
+        this.regionService = regionService;
+        this.regionModelAssembler = regionModelAssembler;
+    }
 
     @Operation(summary = "Listar regiones", description = "Obtiene todas las regiones registradas en el sistema.")
     @ApiResponses(value = {

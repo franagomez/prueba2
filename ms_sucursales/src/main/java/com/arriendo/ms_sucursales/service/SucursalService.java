@@ -10,7 +10,6 @@ import com.arriendo.ms_sucursales.repository.RegionRepository;
 import com.arriendo.ms_sucursales.repository.SucursalRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -21,11 +20,13 @@ public class SucursalService {
     private static final Logger log =
             LoggerFactory.getLogger(SucursalService.class);
 
-    @Autowired
-    private SucursalRepository sucursalRepository;
+    private final SucursalRepository sucursalRepository;
+    private final RegionRepository regionRepository;
 
-    @Autowired
-    private RegionRepository regionRepository;
+    public SucursalService(SucursalRepository sucursalRepository, RegionRepository regionRepository) {
+        this.sucursalRepository = sucursalRepository;
+        this.regionRepository = regionRepository;
+    }
 
     public List<Sucursal> obtenerTodas() {
         log.info("Listando todas las sucursales");

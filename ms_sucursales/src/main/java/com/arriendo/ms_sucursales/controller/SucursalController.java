@@ -12,7 +12,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.hateoas.CollectionModel;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.http.HttpStatus;
@@ -26,11 +25,13 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
 @Tag(name = "Sucursales", description = "Operaciones CRUD y consultas de sucursales")
 public class SucursalController {
 
-    @Autowired
-    private SucursalService sucursalService;
+    private final SucursalService sucursalService;
+    private final SucursalModelAssembler sucursalModelAssembler;
 
-    @Autowired
-    private SucursalModelAssembler sucursalModelAssembler;
+    public SucursalController(SucursalService sucursalService, SucursalModelAssembler sucursalModelAssembler) {
+        this.sucursalService = sucursalService;
+        this.sucursalModelAssembler = sucursalModelAssembler;
+    }
 
     @Operation(summary = "Listar sucursales", description = "Obtiene todas las sucursales registradas.")
     @GetMapping

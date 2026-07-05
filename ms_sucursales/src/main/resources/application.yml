@@ -1,6 +1,0 @@
-spring:
-  application:
-    name: ms-sucursales
-
-server:
-  port: 8085

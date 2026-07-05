@@ -264,28 +264,29 @@ class ReservaServiceTest {
     }
 
     @Test
-    void delete_CuandoReservaExiste_DebeEliminarYRetornarTrue() {
+    void delete_CuandoReservaExiste_DebeEliminarCorrectamente() {
         Integer id = 1;
 
         when(reservaRepository.existsById(id)).thenReturn(true);
 
-        boolean resultado = reservaService.delete(id);
-
-        assertTrue(resultado);
+        reservaService.delete(id);
 
         verify(reservaRepository, times(1)).existsById(id);
         verify(reservaRepository, times(1)).deleteById(id);
     }
 
     @Test
-    void delete_CuandoReservaNoExiste_DebeRetornarFalse() {
+    void delete_CuandoReservaNoExiste_DebeLanzarExcepcion() {
         Integer id = 99;
 
         when(reservaRepository.existsById(id)).thenReturn(false);
 
-        boolean resultado = reservaService.delete(id);
+        ResourceNotFoundException exception = assertThrows(
+                ResourceNotFoundException.class,
+                () -> reservaService.delete(id)
+        );
 
-        assertFalse(resultado);
+        assertEquals("Reserva no encontrada", exception.getMessage());
 
         verify(reservaRepository, times(1)).existsById(id);
         verify(reservaRepository, never()).deleteById(id);

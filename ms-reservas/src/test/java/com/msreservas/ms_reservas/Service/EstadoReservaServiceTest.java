@@ -169,22 +169,23 @@ class EstadoReservaServiceTest {
 
         when(estadoReservaRepository.existsById(1)).thenReturn(true);
 
-        boolean resultado = estadoReservaService.delete(1);
+        estadoReservaService.delete(1);
 
-        assertTrue(resultado);
-
+        verify(estadoReservaRepository).existsById(1);
         verify(estadoReservaRepository).deleteById(1);
     }
 
     @Test
-    void delete_CuandoNoExiste_DebeRetornarFalse() {
+    void delete_CuandoNoExiste_DebeLanzarExcepcion() {
 
         when(estadoReservaRepository.existsById(99)).thenReturn(false);
 
-        boolean resultado = estadoReservaService.delete(99);
+        ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class,
+                () -> estadoReservaService.delete(99));
 
-        assertFalse(resultado);
+        assertEquals("Estado de reserva no encontrado", exception.getMessage());
 
+        verify(estadoReservaRepository).existsById(99);
         verify(estadoReservaRepository, never()).deleteById(anyInt());
     }
 

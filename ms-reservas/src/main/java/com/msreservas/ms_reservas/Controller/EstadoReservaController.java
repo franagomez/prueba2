@@ -1,5 +1,6 @@
 package com.msreservas.ms_reservas.Controller;
 
+import com.msreservas.ms_reservas.Assembler.EstadoReservaModelAssembler;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -10,22 +11,33 @@ import com.msreservas.ms_reservas.DTO.EstadoReservaDTO;
 import com.msreservas.ms_reservas.DTO.EstadoReservaRequestDTO;
 import com.msreservas.ms_reservas.Service.EstadoReservaService;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.hateoas.CollectionModel;
+import org.springframework.hateoas.EntityModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
+
+@Slf4j
 @RestController
 @RequestMapping("/api/v1/estados-reserva")
 @Tag(name = "Estados de Reserva", description = "Operaciones CRUD de estados de reserva")
 public class EstadoReservaController {
 
-    @Autowired
-    private EstadoReservaService estadoReservaService;
+    private final EstadoReservaService estadoReservaService;
+    private final EstadoReservaModelAssembler estadoReservaModelAssembler;
 
-    // Listar estados de reserva
+    public EstadoReservaController(EstadoReservaService estadoReservaService,
+                                    EstadoReservaModelAssembler estadoReservaModelAssembler) {
+        this.estadoReservaService = estadoReservaService;
+        this.estadoReservaModelAssembler = estadoReservaModelAssembler;
+    }
+
     @Operation(summary = "Listar estados de reserva", description = "Obtiene todos los estados de reserva registrados.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Estados encontrados"),
@@ -33,17 +45,23 @@ public class EstadoReservaController {
             @ApiResponse(responseCode = "500", description = "Error interno del servidor", content = @Content)
     })
     @GetMapping
-    public ResponseEntity<List<EstadoReservaDTO>> listar(){
+    public ResponseEntity<CollectionModel<EntityModel<EstadoReservaDTO>>> listar() {
+        log.info("GET /api/v1/estados-reserva");
         List<EstadoReservaDTO> estados = estadoReservaService.findAll();
 
-        if(estados.isEmpty()){
+        if (estados.isEmpty()) {
+            log.warn("No se encontraron estados de reserva registrados");
             return ResponseEntity.noContent().build();
         }
 
-        return ResponseEntity.ok(estados);
+        List<EntityModel<EstadoReservaDTO>> estadosConLinks = estados.stream()
+                .map(estadoReservaModelAssembler::toModel)
+                .toList();
+
+        return ResponseEntity.ok(CollectionModel.of(estadosConLinks,
+                linkTo(methodOn(EstadoReservaController.class).listar()).withSelfRel()));
     }
 
-    // Buscar por id
     @Operation(summary = "Buscar estado de reserva por ID", description = "Obtiene un estado de reserva específico según su ID.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Estado encontrado"),
@@ -51,13 +69,14 @@ public class EstadoReservaController {
             @ApiResponse(responseCode = "500", description = "Error interno del servidor", content = @Content)
     })
     @GetMapping("/{id}")
-    public ResponseEntity<EstadoReservaDTO> buscarPorId(
+    public ResponseEntity<EntityModel<EstadoReservaDTO>> buscarPorId(
             @Parameter(description = "ID del estado de reserva", example = "1")
-            @PathVariable Integer id){
-        return ResponseEntity.ok(estadoReservaService.findById(id));
+            @PathVariable Integer id) {
+        log.info("GET /api/v1/estados-reserva/{}", id);
+        EstadoReservaDTO estado = estadoReservaService.findById(id);
+        return ResponseEntity.ok(estadoReservaModelAssembler.toModel(estado));
     }
 
-    //Crear estado de reserva
     @Operation(summary = "Crear estado de reserva", description = "Registra un nuevo estado de reserva.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Estado creado correctamente"),
@@ -65,11 +84,12 @@ public class EstadoReservaController {
             @ApiResponse(responseCode = "500", description = "Error interno del servidor", content = @Content)
     })
     @PostMapping
-    public ResponseEntity<EstadoReservaDTO> guardar(@Valid @RequestBody EstadoReservaRequestDTO dto){
-        return ResponseEntity.status(HttpStatus.CREATED).body(estadoReservaService.save(dto));
+    public ResponseEntity<EntityModel<EstadoReservaDTO>> guardar(@Valid @RequestBody EstadoReservaRequestDTO dto) {
+        log.info("POST /api/v1/estados-reserva con nombre {}", dto.getNombre());
+        EstadoReservaDTO estado = estadoReservaService.save(dto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(estadoReservaModelAssembler.toModel(estado));
     }
 
-    // Actualizar estado de reserva
     @Operation(summary = "Actualizar estado de reserva", description = "Actualiza un estado de reserva existente según su ID.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Estado actualizado correctamente"),
@@ -78,14 +98,15 @@ public class EstadoReservaController {
             @ApiResponse(responseCode = "500", description = "Error interno del servidor", content = @Content)
     })
     @PutMapping("/{id}")
-    public ResponseEntity<EstadoReservaDTO> actualizar(
+    public ResponseEntity<EntityModel<EstadoReservaDTO>> actualizar(
             @Parameter(description = "ID del estado de reserva a actualizar", example = "1")
             @PathVariable Integer id,
-            @Valid @RequestBody EstadoReservaRequestDTO dto){
-        return ResponseEntity.ok(estadoReservaService.update(id, dto));
+            @Valid @RequestBody EstadoReservaRequestDTO dto) {
+        log.info("PUT /api/v1/estados-reserva/{}", id);
+        EstadoReservaDTO estado = estadoReservaService.update(id, dto);
+        return ResponseEntity.ok(estadoReservaModelAssembler.toModel(estado));
     }
 
-    // Eliminar estado de reserva
     @Operation(summary = "Eliminar estado de reserva", description = "Elimina un estado de reserva existente según su ID.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "Estado eliminado correctamente", content = @Content),
@@ -95,13 +116,9 @@ public class EstadoReservaController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> eliminar(
             @Parameter(description = "ID del estado de reserva a eliminar", example = "1")
-            @PathVariable Integer id){
-        boolean eliminado = estadoReservaService.delete(id);
-
-        if(!eliminado){
-            return ResponseEntity.notFound().build();
-        }
-
+            @PathVariable Integer id) {
+        log.info("DELETE /api/v1/estados-reserva/{}", id);
+        estadoReservaService.delete(id);
         return ResponseEntity.noContent().build();
     }
 }

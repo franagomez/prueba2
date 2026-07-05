@@ -8,84 +8,84 @@ import com.msreservas.ms_reservas.Model.EstadoReserva;
 import com.msreservas.ms_reservas.Model.Reserva;
 import com.msreservas.ms_reservas.Repository.EstadoReservaRepository;
 import com.msreservas.ms_reservas.Repository.ReservaRepository;
-import jakarta.transaction.Transactional;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
+@Slf4j
 @Service
 @Transactional
 public class ReservaService {
 
-    @Autowired
-    private ReservaRepository reservaRepository;
+    private final ReservaRepository reservaRepository;
+    private final ReservaMapper reservaMapper;
+    private final EstadoReservaRepository estadoReservaRepository;
 
-    @Autowired
-    private ReservaMapper reservaMapper;
+    public ReservaService(ReservaRepository reservaRepository, ReservaMapper reservaMapper,
+                           EstadoReservaRepository estadoReservaRepository) {
+        this.reservaRepository = reservaRepository;
+        this.reservaMapper = reservaMapper;
+        this.estadoReservaRepository = estadoReservaRepository;
+    }
 
-    @Autowired
-    private EstadoReservaRepository estadoReservaRepository;
-
+    @Transactional(readOnly = true)
     public List<ReservaDTO> findAll() {
-
+        log.info("Listando reservas");
         List<Reserva> reservas = reservaRepository.findAll();
         List<ReservaDTO> listaDTO = new ArrayList<>();
-
         for (Reserva reserva : reservas) {
             listaDTO.add(reservaMapper.toReservaDTO(reserva));
         }
-
+        log.info("Se encontraron {} reservas", listaDTO.size());
         return listaDTO;
     }
 
+    @Transactional(readOnly = true)
     public ReservaDTO findById(Integer id) {
-
-        Reserva reserva = reservaRepository.findById(id).orElse(null);
-
-        if (reserva == null) {
-            throw new ResourceNotFoundException("Reserva no encontrada");
-        }
-
+        log.info("Buscando reserva con id {}", id);
+        Reserva reserva = reservaRepository.findById(id)
+                .orElseThrow(() -> {
+                    log.error("Reserva no encontrada con id {}", id);
+                    return new ResourceNotFoundException("Reserva no encontrada");
+                });
         return reservaMapper.toReservaDTO(reserva);
     }
 
     public ReservaDTO save(ReservaRequestDTO dto) {
-
-        EstadoReserva estado = estadoReservaRepository
-                .findById(dto.getEstadoReservaId())
-                .orElse(null);
-
-        if (estado == null) {
-            throw new ResourceNotFoundException("Estado de reserva no encontrado");
-        }
+        log.info("Creando reserva para cliente id {}", dto.getClienteId());
+        EstadoReserva estado = estadoReservaRepository.findById(dto.getEstadoReservaId())
+                .orElseThrow(() -> {
+                    log.error("Estado de reserva no encontrado con id {}", dto.getEstadoReservaId());
+                    return new ResourceNotFoundException("Estado de reserva no encontrado");
+                });
 
         Reserva reserva = reservaMapper.toEntity(dto);
         reserva.setEstadoReserva(estado);
 
         Reserva guardada = reservaRepository.save(reserva);
-
+        log.info("Reserva guardada correctamente con id {}", guardada.getId());
         return reservaMapper.toReservaDTO(guardada);
     }
 
     public ReservaDTO update(Integer id, ReservaRequestDTO dto) {
+        log.info("Actualizando reserva con id {}", id);
+        Reserva reserva = reservaRepository.findById(id)
+                .orElseThrow(() -> {
+                    log.error("Reserva no encontrada con id {} al intentar actualizar", id);
+                    return new ResourceNotFoundException("Reserva no encontrada");
+                });
 
-        Reserva reserva = reservaRepository.findById(id).orElse(null);
+        EstadoReserva estado = estadoReservaRepository.findById(dto.getEstadoReservaId())
+                .orElseThrow(() -> {
+                    log.error("Estado de reserva no encontrado con id {}", dto.getEstadoReservaId());
+                    return new ResourceNotFoundException("Estado de reserva no encontrado");
+                });
 
-        if (reserva == null) {
-            throw new ResourceNotFoundException("Reserva no encontrada");
-        }
-
-        EstadoReserva estado = estadoReservaRepository
-                .findById(dto.getEstadoReservaId())
-                .orElse(null);
-
-        if (estado == null) {
-            throw new ResourceNotFoundException("Estado de reserva no encontrado");
-        }
-
+        reserva.setClienteId(dto.getClienteId());
         reserva.setNombreCliente(dto.getNombreCliente());
         reserva.setVehiculoId(dto.getVehiculoId());
         reserva.setCantidadDias(dto.getCantidadDias());
@@ -95,45 +95,39 @@ public class ReservaService {
         reserva.setEstadoReserva(estado);
 
         Reserva actualizada = reservaRepository.save(reserva);
-
+        log.info("Reserva con id {} actualizada correctamente", actualizada.getId());
         return reservaMapper.toReservaDTO(actualizada);
     }
 
-    public boolean delete(Integer id) {
-
-        if (reservaRepository.existsById(id)) {
-            reservaRepository.deleteById(id);
-            return true;
+    public void delete(Integer id) {
+        log.info("Eliminando reserva con id {}", id);
+        if (!reservaRepository.existsById(id)) {
+            log.error("Reserva no encontrada con id {} al intentar eliminar", id);
+            throw new ResourceNotFoundException("Reserva no encontrada");
         }
-
-        return false;
+        reservaRepository.deleteById(id);
+        log.info("Reserva con id {} eliminada correctamente", id);
     }
 
+    @Transactional(readOnly = true)
     public List<ReservaDTO> buscarActivasPorDiasMayor(Integer dias) {
-
-        List<Reserva> reservas =
-                reservaRepository.findByActivaTrueAndCantidadDiasGreaterThan(dias);
-
+        log.info("Buscando reservas activas con más de {} días", dias);
+        List<Reserva> reservas = reservaRepository.findByActivaTrueAndCantidadDiasGreaterThan(dias);
         List<ReservaDTO> listaDTO = new ArrayList<>();
-
         for (Reserva reserva : reservas) {
             listaDTO.add(reservaMapper.toReservaDTO(reserva));
         }
-
         return listaDTO;
     }
 
+    @Transactional(readOnly = true)
     public List<ReservaDTO> buscarDesdeFecha(LocalDate fecha) {
-
-        List<Reserva> reservas =
-                reservaRepository.buscarReservasDesdeFecha(fecha);
-
+        log.info("Buscando reservas desde la fecha {}", fecha);
+        List<Reserva> reservas = reservaRepository.buscarReservasDesdeFecha(fecha);
         List<ReservaDTO> listaDTO = new ArrayList<>();
-
         for (Reserva reserva : reservas) {
             listaDTO.add(reservaMapper.toReservaDTO(reserva));
         }
-
         return listaDTO;
     }
 }

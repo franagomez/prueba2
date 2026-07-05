@@ -1,75 +1,70 @@
 package com.msreservas.ms_reservas.Service;
 
-
 import com.msreservas.ms_reservas.DTO.EstadoReservaDTO;
 import com.msreservas.ms_reservas.DTO.EstadoReservaRequestDTO;
 import com.msreservas.ms_reservas.Exception.ResourceNotFoundException;
 import com.msreservas.ms_reservas.Mapper.EstadoReservaMapper;
 import com.msreservas.ms_reservas.Model.EstadoReserva;
 import com.msreservas.ms_reservas.Repository.EstadoReservaRepository;
-import jakarta.transaction.Transactional;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 
+@Slf4j
 @Service
 @Transactional
 public class EstadoReservaService {
 
-    @Autowired
-    private EstadoReservaRepository estadoReservaRepository;
+    private final EstadoReservaRepository estadoReservaRepository;
+    private final EstadoReservaMapper estadoReservaMapper;
 
-    @Autowired
-    private EstadoReservaMapper estadoReservaMapper;
+    public EstadoReservaService(EstadoReservaRepository estadoReservaRepository,
+                                 EstadoReservaMapper estadoReservaMapper) {
+        this.estadoReservaRepository = estadoReservaRepository;
+        this.estadoReservaMapper = estadoReservaMapper;
+    }
 
-    // Listar estados de reserva
-    public List<EstadoReservaDTO> findAll(){
-
+    @Transactional(readOnly = true)
+    public List<EstadoReservaDTO> findAll() {
+        log.info("Listando estados de reserva");
         List<EstadoReserva> estados = estadoReservaRepository.findAll();
         List<EstadoReservaDTO> listaDTO = new ArrayList<>();
-
-        for (EstadoReserva estado : estados){
-
+        for (EstadoReserva estado : estados) {
             listaDTO.add(estadoReservaMapper.toDTO(estado));
         }
-
+        log.info("Se encontraron {} estados de reserva", listaDTO.size());
         return listaDTO;
     }
 
-    // Buscar estado por id
-    public EstadoReservaDTO findById(Integer id){
-
-        EstadoReserva estado = estadoReservaRepository.findById(id).orElse(null);
-
-        if (estado == null){
-            throw new ResourceNotFoundException("Estado de reserva no encontrado");
-        }
-
+    @Transactional(readOnly = true)
+    public EstadoReservaDTO findById(Integer id) {
+        log.info("Buscando estado de reserva con id {}", id);
+        EstadoReserva estado = estadoReservaRepository.findById(id)
+                .orElseThrow(() -> {
+                    log.error("Estado de reserva no encontrado con id {}", id);
+                    return new ResourceNotFoundException("Estado de reserva no encontrado");
+                });
         return estadoReservaMapper.toDTO(estado);
     }
 
-    // Crear estado
-
-    public EstadoReservaDTO save(EstadoReservaRequestDTO dto){
-
+    public EstadoReservaDTO save(EstadoReservaRequestDTO dto) {
+        log.info("Creando estado de reserva {}", dto.getNombre());
         EstadoReserva estado = estadoReservaMapper.toEntity(dto);
-
         EstadoReserva guardado = estadoReservaRepository.save(estado);
-
+        log.info("Estado de reserva guardado correctamente con id {}", guardado.getId());
         return estadoReservaMapper.toDTO(guardado);
     }
 
-    // Actualizar estado de reserva
-
-    public EstadoReservaDTO update(Integer id, EstadoReservaRequestDTO dto){
-
-        EstadoReserva estado = estadoReservaRepository.findById(id).orElse(null);
-
-        if (estado == null){
-            throw new ResourceNotFoundException("Estado de reserva no encontrado");
-        }
+    public EstadoReservaDTO update(Integer id, EstadoReservaRequestDTO dto) {
+        log.info("Actualizando estado de reserva con id {}", id);
+        EstadoReserva estado = estadoReservaRepository.findById(id)
+                .orElseThrow(() -> {
+                    log.error("Estado de reserva no encontrado con id {} al intentar actualizar", id);
+                    return new ResourceNotFoundException("Estado de reserva no encontrado");
+                });
 
         estado.setNombre(dto.getNombre());
         estado.setDescripcion(dto.getDescripcion());
@@ -78,19 +73,17 @@ public class EstadoReservaService {
         estado.setFechaCreacion(dto.getFechaCreacion());
 
         EstadoReserva actualizado = estadoReservaRepository.save(estado);
-
+        log.info("Estado de reserva con id {} actualizado correctamente", actualizado.getId());
         return estadoReservaMapper.toDTO(actualizado);
     }
 
-    // Eliminar estado de reserva
-    public boolean delete(Integer id){
-
-        if (estadoReservaRepository.existsById(id)){
-            estadoReservaRepository.deleteById(id);
-            return true;
+    public void delete(Integer id) {
+        log.info("Eliminando estado de reserva con id {}", id);
+        if (!estadoReservaRepository.existsById(id)) {
+            log.error("Estado de reserva no encontrado con id {} al intentar eliminar", id);
+            throw new ResourceNotFoundException("Estado de reserva no encontrado");
         }
-
-        return false;
+        estadoReservaRepository.deleteById(id);
+        log.info("Estado de reserva con id {} eliminado correctamente", id);
     }
-
 }

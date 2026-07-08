@@ -1,6 +1,8 @@
 package com.arriendo.ms_empleados.exception;
 
 import jakarta.servlet.http.HttpServletRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -13,6 +15,8 @@ import java.util.Map;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ErrorResponse> manejarResourceNotFound(
@@ -54,6 +58,8 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> manejarExceptionGeneral(
             Exception ex, HttpServletRequest request) {
+
+        log.error("Error interno no controlado en {}: {}", request.getRequestURI(), ex.getMessage(), ex);
 
         ErrorResponse error = new ErrorResponse(
                 LocalDateTime.now(),

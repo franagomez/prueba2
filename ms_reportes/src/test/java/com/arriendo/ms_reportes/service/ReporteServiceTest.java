@@ -138,7 +138,11 @@ class ReporteServiceTest {
                 )
         );
 
-        when(pagoClient.obtenerPagos()).thenReturn(pagos);
+        Map<String, Object> respuestaHal = Map.of(
+                "_embedded", Map.of("pagoList", pagos)
+        );
+
+        when(pagoClient.obtenerPagos()).thenReturn(respuestaHal);
 
         List<Map<String, Object>> resultado = reporteService.obtenerPagos();
 
@@ -159,7 +163,11 @@ class ReporteServiceTest {
                 )
         );
 
-        when(reservaClient.obtenerReservas()).thenReturn(reservas);
+        Map<String, Object> respuestaHal = Map.of(
+                "_embedded", Map.of("reservaList", reservas)
+        );
+
+        when(reservaClient.obtenerReservas()).thenReturn(respuestaHal);
 
         List<Map<String, Object>> resultado = reporteService.obtenerReservas();
 

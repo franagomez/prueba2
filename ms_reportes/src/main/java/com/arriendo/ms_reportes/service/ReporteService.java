@@ -12,6 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -32,50 +33,57 @@ public class ReporteService {
     }
 
     public List<Reporte> obtenerTodos() {
-
         log.info("Listando todos los reportes");
-
         return reporteRepository.findAll();
     }
 
     public List<Map<String, Object>> obtenerPagos() {
-
         log.info("Obteniendo pagos desde ms-pagos");
-
-        return pagoClient.obtenerPagos();
+        Map<String, Object> respuesta = pagoClient.obtenerPagos();
+        return extraerListaEmbebida(respuesta);
     }
 
     public List<Map<String, Object>> obtenerReservas() {
-
         log.info("Obteniendo reservas desde ms-reservas");
+        Map<String, Object> respuesta = reservaClient.obtenerReservas();
+        return extraerListaEmbebida(respuesta);
+    }
 
-        return reservaClient.obtenerReservas();
+    @SuppressWarnings("unchecked")
+    private List<Map<String, Object>> extraerListaEmbebida(Map<String, Object> respuestaHal) {
+        if (respuestaHal == null) {
+            return Collections.emptyList();
+        }
+
+        Object embedded = respuestaHal.get("_embedded");
+        if (!(embedded instanceof Map<?, ?> embeddedMap) || embeddedMap.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        Object primeraLista = embeddedMap.values().iterator().next();
+        if (primeraLista instanceof List<?> lista) {
+            return (List<Map<String, Object>>) lista;
+        }
+
+        return Collections.emptyList();
     }
 
     public Reporte obtenerPorId(Long id) {
-
         log.info("Buscando reporte con id {}", id);
-
         return reporteRepository.findById(id)
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Reporte no encontrado"));
     }
 
     public ReporteResponseDTO guardar(ReporteRequestDTO dto) {
-
         log.info("Guardando nuevo reporte");
-
         Reporte reporte = ReporteMapper.toEntity(dto);
-
         Reporte reporteGuardado = reporteRepository.save(reporte);
-
         return ReporteMapper.toDTO(reporteGuardado);
     }
 
     public Reporte actualizar(Long id, ReporteRequestDTO dto) {
-
         log.info("Actualizando reporte con id {}", id);
-
         Reporte reporte = obtenerPorId(id);
 
         reporte.setTipoReporte(dto.getTipoReporte());
@@ -88,11 +96,8 @@ public class ReporteService {
     }
 
     public void eliminar(Long id) {
-
         log.info("Eliminando reporte con id {}", id);
-
         Reporte reporte = obtenerPorId(id);
-
         reporteRepository.delete(reporte);
     }
 }

@@ -123,3 +123,19 @@ Cada microservicio incluye tests de Service (Mockito), Controller (`@WebMvcTest`
 ```
 ./mvnw test
 ```
+## 📬 Colección de Postman
+
+La colección utilizada para probar todos los endpoints del sistema se encuentra en la carpeta **Postman/**.
+
+**Archivo:**
+
+`Sistema Arriendo de Vehículos.postman_collection.json`
+
+### Cómo utilizarla 
+
+La colección incluye todas las solicitudes CRUD de los siete microservicios, además de las consultas de comunicación entre microservicios mediante OpenFeign (Reportes a Reservas y Pagos).
+
+1. Abrir Postman.
+2. Seleccionar **Import**.
+3. Elegir el archivo `Sistema Arriendo de Vehículos.postman_collection.json` ubicado en la carpeta `Postman`.
+4. Ejecutar las solicitudes mediante el API Gateway (`http://localhost:8080`) o directamente sobre el puerto correspondiente de cada microservicio (del 8081 al 8087).

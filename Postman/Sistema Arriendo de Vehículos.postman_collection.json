@@ -938,6 +938,137 @@
             }
           },
           "response": []
+        },
+        {
+          "name": "Listar Regiones",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/api/v1/regiones/2",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "regiones",
+                "2"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Buscar Regiones Por ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/api/v1/regiones/2",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "regiones",
+                "2"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Crear Region",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"nombre\": \"Región Metropolitana de Santiago\",\r\n  \"codigo\": \"RM\",\r\n  \"numeroRegion\": 13,\r\n  \"activo\": false,\r\n  \"fechaCreacion\": \"2026-07-09\"\r\n}\r\n",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/v1/regiones",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "regiones"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Actualizar Region",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"nombre\": \"Región Metropolitana de Santiago\",\r\n  \"codigo\": \"RM\",\r\n  \"numeroRegion\": 15,\r\n  \"activo\": false,\r\n  \"fechaCreacion\": \"2026-07-09\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/v1/regiones/4",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "regiones",
+                "4"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Eliminar Region Por ID",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"nombre\": \"Región Metropolitana de Santiago\",\r\n  \"codigo\": \"RM\",\r\n  \"numeroRegion\": 15,\r\n  \"activo\": false,\r\n  \"fechaCreacion\": \"2026-07-09\"\r\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/v1/regiones/4",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "regiones",
+                "4"
+              ]
+            }
+          },
+          "response": []
         }
       ]
     },

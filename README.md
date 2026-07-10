@@ -6,7 +6,9 @@
 
 ## Contexto del proyecto
 
-Sistema de gestión para una empresa de arriendo de vehículos, construido como una arquitectura de microservicios. Cada dominio del negocio (clientes, vehículos, reservas, pagos, sucursales, empleados y reportes) es un microservicio independiente con su propia base de datos, que se registra en un servidor de descubrimiento (Eureka) y se expone al exterior a través de un API Gateway único.
+Sistema de gestión para una empresa de arriendo de vehículos, construido como una arquitectura de microservicios. Cada dominio del negocio (clientes, vehículos, reservas, 
+pagos, sucursales, empleados y reportes) es un microservicio independiente con su propia base de datos, 
+que se registra en un servidor de descubrimiento (Eureka) y se expone al exterior a través de un API Gateway único.
 
 ## Microservicios
 
@@ -95,6 +97,7 @@ El API Gateway (api-gateway/src/main/resources/application.yaml, puerto 8080) en
 | /api/v1/sucursales/** | ms-sucursales (localhost:8085) |
 | /api/v1/empleados/** | ms-empleados (localhost:8086) |
 | /api/v1/reportes/** | ms-reportes (localhost:8087) |
+| /api/v1/regiones/** | ms-sucursales (localhost:8085) |
 
 Es decir, cualquier endpoint puede probarse tanto directo contra el puerto del microservicio como a través de http://localhost:8080/api/v1/... vía el Gateway.
 
@@ -102,13 +105,18 @@ Es decir, cualquier endpoint puede probarse tanto directo contra el puerto del m
 
 Cada microservicio expone su propia documentación OpenAPI/Swagger en su propio puerto:
 
-- ms-pagos: [http://localhost:8084/doc/swagger-ui.html](http://localhost:8084/doc/swagger-ui.html) (ruta personalizada)
-- ms-clientes: [http://localhost:8081/swagger-ui.html](http://localhost:8081/swagger-ui.html)
-- Resto de los microservicios (ms-vehiculos, ms-reservas, ms_sucursales, ms_empleados, ms_reportes): ruta por defecto de springdoc, http://localhost:<puerto>/swagger-ui/index.html
+- ms-clientes: http://localhost:8081/swagger-ui/index.html
+- ms-vehiculos: http://localhost:8082/swagger-ui/index.html
+- ms-reservas:http://localhost:8083/swagger-ui/index.html
+- ms-pagos: http://localhost:8084/doc/swagger-ui/index.html
+- ms-sucursales: http://localhost:8085/swagger-ui/index.html
+- ms-empleados: http://localhost:8086/swagger-ui/index.html
+- ms-reportes: http://localhost:8087/doc/swagger-ui.html / http://localhost:8087/doc/swagger-ui/index.html
+
 
 ## Cómo probar los endpoints
 
-- Con todos los servicios arriba (ver orden de ejecución), abre el Swagger UI del microservicio que quieras probar (o el del Gateway si prefieres ir por ahí) y ejecuta los endpoints directamente desde ahí ("Try it out").
+- Con todos los servicios arriba (ver orden de ejecución), abre el Swagger UI del microservicio que quieras probar y ejecuta los endpoints directamente desde ahí ("Try it out").
 - Alternativamente, usa Postman, Insomnia o curl contra:
    - El microservicio directo, ej.: curl http://localhost:8086/api/v1/empleados
    - O a través del Gateway, ej.: curl http://localhost:8080/api/v1/empleados
@@ -118,17 +126,24 @@ Cada microservicio expone su propia documentación OpenAPI/Swagger en su propio 
 
 ## Colección Postman
 
-La colección con las peticiones principales de los 7 microservicios está en /postman/EFT_Coleccion_Postman.postman_collection.json. Impórtala en Postman (botón "Import") y usa las variables de colección ya configuradas ({{ms_clientes}}, {{ms_vehiculos}}, etc.), que apuntan a los puertos del perfil dev.
+La colección con las peticiones principales de los 7 microservicios está en Postman/Sistema Arriendo de Vehículos.postman_collection.json. Impórtala en Postman (botón "Import").
 
 Requiere que Eureka y los 7 microservicios estén corriendo con el perfil dev activo antes de probar, especialmente para los endpoints de ms-reportes que consumen ms-pagos y ms-reservas vía Feign.
 
 ## Trabajo colaborativo (Trello)
 
-[Aquí va el link al tablero de Trello, y una breve descripción de cómo se organizó el trabajo: columnas usadas (ej. "Por hacer / En progreso / Terminado"), y qué tareas se asignó cada integrante.]
+Tablero del proyecto: [Trello — Sistema de Arriendo de Vehículos](https://trello.com/b/IfQGC56U/sistema-de-arriendo-de-vehiculos)
+
+El trabajo se organizó mediante tarjetas técnicas con responsables, descripciones y listas de verificación. Las tareas abarcan arquitectura, persistencia, entidades, patrón CSR, DTOs, CRUD, consultas personalizadas, reglas de negocio, Feign Client, Eureka, API Gateway, Swagger/OpenAPI, HATEOAS, pruebas automatizadas, GitHub, documentación y validación final.
+
+Las tarjetas finalizadas permiten identificar los aportes individuales y colaborativos de ambas integrantes.
 
 ## Tests
 
-Cada microservicio incluye tests de Service (Mockito), Controller (@WebMvcTest + MockMvc) y Repository (@DataJpaTest con H2, perfil test). Para correrlos desde cada carpeta de microservicio:
+Cada microservicio incluye tests de Service (Mockito), Controller (@WebMvcTest + MockMvc) y Repository (@DataJpaTest con H2, perfil test).
 
-bash
-./mvnw test -DSPRING_PROFILES_ACTIVE=testicitudes mediante el API Gateway (`http://localhost:8080`) o directamente sobre el puerto correspondiente de cada microservicio (del 8081 al 8087).
+Para correrlos desde la carpeta del microservicio:
+
+```bash
+./mvnw test -Dspring.profiles.active=test
+```
